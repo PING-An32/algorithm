@@ -1,3 +1,7 @@
+# Java集合
+ArrayList<Integer> ans to int[]:
+ans.stream().mapToInt(Integer::intValue).toArray();
+
 # 单调栈
 ![alt text](153f6ef4f21c6f6c5bbeb1fa816c018.jpg)
 # TreeMap
@@ -8,6 +12,7 @@ LCR 057 存在重复元素Ⅲ
 ```java
 使用
 PriorityQueueImpl<Integer> pq = new PriorityQueueImpl<>(Integer::compare);
+PriorityQueueImpl<Integer> pq = new PriorityQueueImpl<>((o1,o2)->o2-o1);
 PriorityQueueImpl<Integer> pq = new PriorityQueueImpl<>(new Comparator<Interger>(){
     @Override
     public int compare(Integer i1,Integer i2){
@@ -15,7 +20,51 @@ PriorityQueueImpl<Integer> pq = new PriorityQueueImpl<>(new Comparator<Interger>
     }
 });
 ```
+# 栈
+## LCR 147 最小栈
+要求取栈中最小元素的时间为O(1)
+push,pop,top时间也为O(1)
+可以用一个辅助栈
+```java
+Deque<Integer> A,B;
+/** initialize your data structure here. */
+public MinStack() {
+    A = new ArrayDeque();
+    B = new ArrayDeque();
+}
 
+public void push(int x) {
+    A.push(x);
+    if(B.isEmpty() || B.peek()>=x)
+        B.push(x);
+}
+
+public void pop() {
+    if(A.pop().equals(B.peek()))
+        B.pop();
+}
+
+public int top() {
+    return A.peek();
+}
+
+public int getMin() {
+    return B.peek();
+}
+```
+## LCR 148 验证图书取出顺序
+```java
+int i=0;
+Deque<Integer> stack = new ArrayDeque();
+for(int num:putIn){
+    stack.push(num);
+    while(!stack.isEmpty() && stack.peek()==takeOut[i]){
+        stack.pop();
+        i++;
+    }
+}
+return stack.isEmpty();
+```
 # 回溯
 ## LCR 079 子集
 选或不选
@@ -609,6 +658,102 @@ for(int i = 1;i<=target;i++){//如果存在一种排列，其中的元素之和�
 }
 return dp[target];
 ```
+## LCR 137 模糊搜索验证
+```java
+public boolean articleMatch(String s, String p) {
+                            //article   input
+    //dp[i][j]表示  s[:i] p[:j]能否匹配
+    //下一状态： 添加一个字符s[i+1]后能否匹配   dp[i+1][j]
+    //          或添加字符p[j+1]后能否匹配     dp[i][j+1]
+    //当添加的字符p[j-1]='*'时，dp[i][j]在当以下任一情况为true时等于true
+    //dp[i][j-2]: 将字符组合   p[j-2]*   看作出现0次时，能否匹配
+    //dp[i-1][j]且s[i-1] = p[j-2]   :让字符p[j-2]多出现1次时，能否匹配
+    //dp[i-1][j]且p[j-2]='.'        :让字符'.'多出现1次时，能否匹配
+    int m = s.length() +1,n = p.length()+1;
+    boolean[][] dp = new boolean[m][n];
+    dp[0][0] = true;
+    for(int j=2;j<n;j+=2)
+        dp[0][j] = dp[0][j-2] && p.charAt(j-1) =='*';
+    for(int i=1;i<m;i++){
+        for(int j=1;j<n;j++){//这行表示是在p中添加一个字符
+            if(p.charAt(j-1) =='*'){
+                //字符串s的前i个字符和p的前j-2个字符匹配，当前要判断的是p字符串添加?后dp[i][j]是否为true
+                //                                 毫无疑问?可以并到*中，所以为true
+                //s="a  b  c  d  e" p="a  b   *  ?"
+                //      i                j-2 j-1 j 
+                if(dp[i][j-2]) dp[i][j] =true;
+                //字符串s的前i-1个字符和p的前j个字符匹配，并且p的j-1号字符为'*',
+                //让字符p[j-2]多出现1次时，能否匹配，若能匹配，那么当前向p中插入第j号字符为true
+                //s="a  b  c  d  e" p="a  b   *  ?"
+                //           i-1         j-2 j-1 j 
+                else if(dp[i-1][j] && s.charAt(i-1) ==p.charAt(j-2)) dp[i][j]=true;
+                //字符串s的前i-1个字符和p的前j个字符匹配，并且p的j-1号字符为'*',
+                //让字符'.'多出现1次时，能否匹配，若能匹配，那么当前向p中插入第j号字符为true
+                else if(dp[i-1][j] && p.charAt(j-2) =='.')dp[i][j]=true;
+            }else{
+                //字符串 s 的前 i-1 个字符和 p 的前 j -1个字符匹配, 且s的第i个字符等于p的第j个字符;
+                if(dp[i-1][j-1] && s.charAt(i-1)==p.charAt(j-1))dp[i][j]=true;
+                //字符串 s 的前 i-1 个字符和 p 的前 j -1个字符匹配, 且p的第j个字符为'.';
+                else if(dp[i-1][j-1] && p.charAt(j-1)=='.')dp[i][j]=true;
+            }
+        }
+    }
+    return dp[m-1][n-1];
+}
+```
+# 特定知识
+## LCR 138 有效数字（有限状态自动机）
+首先定义出9种状态
+    0开始的空格
+    1幂符号前的正负号
+    2小数点前的数字
+    3小数点、小数点后的数字
+    4当小数点前为空格时，小数点、小数点后的数字
+    5幂符号
+    6幂符号后的正负号
+    7幂符号后的数字
+    8结尾的空格
+合法的结束状态：2，3，7，8
+![alt text](image-3.png)
+一种状态可以根据某输入转换到另外一个状态
+如
+```java
+new HashMap<>() {{ put(' ', 0); put('s', 1); put('d', 2); put('.', 4); }},
+当输入为' '时，跳到状态0
+当输入为's'时，跳到状态1
+当输入为'd'时，跳到状态2
+当输入为'.'时，跳到状态4
+```
+
+
+```java
+public boolean validNumber(String s) {
+    Map[] states = {
+        new HashMap<>() {{ put(' ', 0); put('s', 1); put('d', 2); put('.', 4); }}, // 0.
+        new HashMap<>() {{ put('d', 2); put('.', 4); }},                           // 1.
+        new HashMap<>() {{ put('d', 2); put('.', 3); put('e', 5); put(' ', 8); }}, // 2.
+        new HashMap<>() {{ put('d', 3); put('e', 5); put(' ', 8); }},              // 3.
+        new HashMap<>() {{ put('d', 3); }},                                        // 4.
+        new HashMap<>() {{ put('s', 6); put('d', 7); }},                           // 5.
+        new HashMap<>() {{ put('d', 7); }},                                        // 6.
+        new HashMap<>() {{ put('d', 7); put(' ', 8); }},                           // 7.
+        new HashMap<>() {{ put(' ', 8); }}                                         // 8.
+    };
+    int p = 0;
+    char t;
+    for(char c : s.toCharArray()) {
+        if(c >= '0' && c <= '9') t = 'd';
+        else if(c == '+' || c == '-') t = 's';
+        else if(c == 'e' || c == 'E') t = 'e';
+        else if(c == '.' || c == ' ') t = c;
+        else t = '?';
+        if(!states[p].containsKey(t)) return false;
+        p = (int)states[p].get(t);//states[p].get(t)表示从一种状态转换到另一种状态
+    }
+    return p == 2 || p == 3 || p == 7 || p == 8;
+}
+```
+
 # 图论 
 ## LCR 105 岛屿最大面积
 ```java
@@ -680,6 +825,220 @@ public void dfs(int node,int c,int[][] graph){
             valid = false;
             return;
         }//没有处理color[neighbor]==cNei的情况，因为直接放行即可
+    }
+}
+```
+## LCR 107 01矩阵
+```java
+static int[][] dirs = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+
+public int[][] updateMatrix(int[][] matrix) {
+    int m = matrix.length, n = matrix[0].length;
+    int[][] dist = new int[m][n];
+    boolean[][] seen = new boolean[m][n];
+    Queue<int[]> queue = new LinkedList<int[]>();
+    // 将所有的 0 添加进初始队列中
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (matrix[i][j] == 0) {
+                queue.offer(new int[]{i, j});
+                seen[i][j] = true;
+            }
+        }
+    }
+
+    // 广度优先搜索
+    while (!queue.isEmpty()) {
+        int[] cell = queue.poll();
+        int i = cell[0], j = cell[1];
+        for (int d = 0; d < 4; ++d) {
+            int ni = i + dirs[d][0];
+            int nj = j + dirs[d][1];
+            if (ni >= 0 && ni < m && nj >= 0 && nj < n && !seen[ni][nj]) {
+                dist[ni][nj] = dist[i][j] + 1;
+                queue.offer(new int[]{ni, nj});
+                seen[ni][nj] = true;
+            }
+        }
+    }
+
+    return dist;
+}
+```
+# 聪明题
+## LCR 120 寻找文件副本
+可以利用好0 ≤ documents[i] ≤ n-1这个条件
+```java
+int i=0;
+while(i<documents.length){
+    if(documents[i]==i){
+        i++;
+        continue;
+    }
+    if(documents[documents[i]]==documents[i]) return documents[i];
+    int tmp = documents[i];
+    documents[i] = documents[tmp];
+    documents[tmp] = tmp;
+}
+return -1;
+```
+## LCR 121 寻找目标值
+以矩阵右上角或左下角开始，转换为二叉搜索树
+```java
+int i = plants.length - 1, j = 0;
+while(i >= 0 && j < plants[0].length)
+{
+    if(plants[i][j] > target) i--;
+    else if(plants[i][j] < target) j++;
+    else return true;
+}
+return false;
+```
+## LCR 125 图书整理Ⅱ
+用两个栈实现队列（只有当B为空时才将A中元素全部压入B中实现A中元素的倒叙）
+```java
+LinkedList<Integer> A,B;
+public CQueue() {
+    A = new LinkedList<Integer>();
+    B = new LinkedList<Integer>();
+}
+
+public void appendTail(int value) {
+    A.addLast(value);
+}
+
+public int deleteHead() {
+    if(!B.isEmpty())return B.removeLast();
+    if(A.isEmpty()) return -1;
+    while(!A.isEmpty())
+        B.addLast(A.removeLast());
+    return B.removeLast();
+}
+```
+## LCR 129 字母迷宫
+```java
+public boolean wordPuzzle(char[][] grid, String target) {
+    char[] words = target.toCharArray();
+    for(int i=0;i<grid.length;i++){
+        for(int j=0;j<grid[0].length;j++){
+            if(dfs(grid,words,i,j,0))return true;
+        }
+    }
+    return false;
+}
+private boolean dfs(char[][] grid,char[] target,int i,int j,int k){
+    if(i>=grid.length||i<0 || j>=grid[0].length||j<0||grid[i][j]!=target[k]) return false;
+    if(k==target.length-1)return true;
+    grid[i][j] = '\0';//标记当前节点已遍历
+    boolean res = dfs(grid,target,i+1,j,k+1) || dfs(grid,target,i-1,j,k+1) ||
+                dfs(grid,target,i,j+1,k+1) || dfs(grid,target,i,j-1,k+1);
+    grid[i][j] = target[k];//恢复现场
+    return res;
+}
+```
+## LCR 130 衣橱整理
+```java
+public int wardrobeFinishing(int m, int n, int cnt) {
+    boolean[][] visited = new boolean[m][n];
+    return dfs(0, 0, m, n, cnt, visited);
+}
+public int dfs(int i, int j, int m, int n, int k, boolean[][] visited) {
+    if(i >= m || j >= n || k < getSum(i) + getSum(j) || visited[i][j]) {
+        return 0;
+    }
+    visited[i][j] = true;
+    return 1 + dfs(i + 1, j, m, n, k, visited) + dfs(i, j + 1, m, n, k, visited);
+}
+
+private int getSum(int a) {
+    int sum = a % 10;
+    int tmp = a / 10;
+    while(tmp > 0) {
+        sum += tmp % 10;
+        tmp /= 10;
+    }
+    return sum;
+}
+```
+## LCR 131 砍竹子Ⅰ（砍竹子Ⅱ只能使用数学）
+数学推论：（贪心做法）
+1.为使乘积最大，只有长度为2和3的竹子不应再切分，且3比2更优
+```java
+if(bamboo_len<=3)return bamboo_len-1;
+int a = bamboo_len/3,b=bamboo_len%3;
+if(b==0)return (int)Math.pow(3,a);
+if(b==1)return (int)Math.pow(3,a-1)*4;
+return (int)Math.pow(3,a)*2;
+```
+dp做法更为通用
+```java
+int[] dp = new int[bamboo_len+1];//dp[i]表示正整数i拆分成至少两个正整数的和之后，这些正整数的最大乘积
+dp[0]=0;
+dp[1]=0;
+// dp[2]=1;
+for(int i=2;i<=bamboo_len;i++){
+    int curMax = 0;
+    for(int j=1;j<i;j++){
+        curMax = Math.max(curMax,Math.max(j*(i-j),j*dp[i-j]));
+    }
+    dp[i] = curMax;
+}
+return dp[bamboo_len];
+```
+## LCR 134 快速幂
+```java
+if(x == 0.0f) return 0.0d;
+long b = n;
+double res = 1.0;
+if(b < 0) {
+    x = 1 / x;
+    b = -b;
+}
+while(b > 0) {
+    if((b & 1) == 1) res *= x;//这条判断是为了解决3*3*3*3*3 -> 9*9*3的问题
+    x *= x;
+    b >>= 1;
+    //有点像把2*2*2*2 变成4*4
+}
+return res;
+```
+# 双指针
+## LCR 139 训练计划Ⅰ（将奇数放前面，偶数放后面）
+1.指针left从左向右寻找偶数
+2.指针right从右向左寻找技术
+3.将偶数actions[i]和技术actions[j]交换
+```java
+int left =0,right= actions.length-1;
+while(left<right){
+    while(left<right && (actions[left]&1)==1)left++;
+    while(left<right && (actions[right]&1)==0)right--;
+    int tmp = actions[left];
+    actions[left] = actions[right];
+    actions[right] = tmp;
+}
+return actions;
+```
+# 树
+## LCR 143 子结构判断
+```java
+public boolean isSubStructure(TreeNode A, TreeNode B) {
+    //用于找到A中子结构和B相同的根节点
+    if(B==null || A==null){
+        return false;
+    }
+    if(A.val ==B.val && (dfs(A.left,B.left)&&dfs(A.right,B.right))){
+        return true;
+    }
+    return isSubStructure(A.left,B) || isSubStructure(A.right,B);
+}
+private boolean dfs(TreeNode A,TreeNode B){
+    //用于判断以相同根节点出发的两颗树是否完全相同
+    if(B==null)return true;
+    if(A==null)return false;
+    if(A.val == B.val){
+        return dfs(A.left,B.left)&&dfs(A.right,B.right);
+    }else{
+        return false;
     }
 }
 ```
