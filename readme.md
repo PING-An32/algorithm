@@ -1,26 +1,906 @@
 # Java集合
-ArrayList<Integer> ans to int[]:
-ans.stream().mapToInt(Integer::intValue).toArray();
+### ArrayList转 对应的 基本数据类型的数组
+ArrayList<Integer> ans to int[]: ans.stream().mapToInt(Integer::intValue).toArray();
+### 基本数据类型数组int[]转List
+List<Integer> list = Arrays.stream(array).boxed().collect(Collectors.toList());
+### 取基本数据类型数组int[] nums的最大值,和
+total = Arrays.stream(nums).sum()   是否需要加getAsInt() ？
+max = Arrays.stream(nums).max()
+### 字符串str转字符数组char[]
+char[] array = str.toCharArray()
+### 取出字符串中的第i个字符
+char c = str.charAt(i)
+### 字符与字符之间运算
+int sub = p.charAt(i) - 'a'
+### 数组int[]与数组int[]之间比较
+Arrays.equals(cnt1,cnt2)
+### StringBuffer/StringBuilder转String
+sb.toString()
+进阶：两sb判断是否相等
+sb1.toString().equals(sb2.toString())
+### 字符判断是否是英文字母和数字
+char ch
+Character.isLetterOrDigit(ch)
+### 字符转小写
+Character.toLowerCase(ch)
+### String转int
+int hour = Integer.parseInt(str)
+### int转String
+String.valueOf(int)
+### char[] 转String
+String word = new String(array)
+### 存储图论中的边
+map和list均可
+Map<Character,List<Character>> edges = new HashMap()
+edges.putIfAbsent(c,new ArrayList<Character>())//先初始化好，防止空指针异常
+List<Character> edge = edges.get(ch)
 
-# 单调栈
-![alt text](153f6ef4f21c6f6c5bbeb1fa816c018.jpg)
-# TreeMap
-我的日程安排表Ⅰ
-# 桶排序
-LCR 057 存在重复元素Ⅲ
-# 优先队列自定义
+List<List<Integer>> edges = new ArrayList()
+edges.add(new ArrayList<Integer>())//先初始化好，防止空指针异常
+List<Integer> edge = edges.get(i)
+### HashMap
+Set<Character> set = map.keySet()
+map.values()
+Map<Character,List<Character>> entry = map.entrySet()
+
+# 位运算
+## LCR 004 只出现一次的数字Ⅱ
+除某个元素仅出现一次外，其余每个元素都恰出现三次
 ```java
-使用
-PriorityQueueImpl<Integer> pq = new PriorityQueueImpl<>(Integer::compare);
-PriorityQueueImpl<Integer> pq = new PriorityQueueImpl<>((o1,o2)->o2-o1);
-PriorityQueueImpl<Integer> pq = new PriorityQueueImpl<>(new Comparator<Interger>(){
-    @Override
-    public int compare(Integer i1,Integer i2){
-        return i2-i1;
+int ans = 0;
+for(int i =0;i<32;i++){
+    int cnt1 = 0;
+    for(int x:nums){
+        cnt1 += ((x >> i) & 1);//所有nums数中的第i位之和（1的个数） 如果某不是目标数的元素当前位为1，那么加了3次1，模3之后必定为0
     }
-});
+    if(cnt1%3!=0){
+        ans |= (1 << i);//所以模3之后为1的必是因为目标数的i位为1
+    }
+}
+return ans;
 ```
-# 栈
+## LCR 005 最大单词长度乘积
+words = ["abcw","baz","foo","bar","fxyz","abcdef"]
+这两个单词为 "abcw", "fxyz"。它们不包含相同字符，且长度的乘积最大。
+```java
+int length = words.length;
+int[] masks = new int[length];
+for(int i=0;i<length;i++){
+    String word = words[i];
+    int wordLength = word.length();
+    for(int j=0;j<wordLength;j++){
+        masks[i] |= 1 << (word.charAt(j)-'a');//masks记录了words数组中各位的与'a'的偏移量
+    }
+}
+int maxProd = 0;
+for(int i=0;i<length;i++){
+    for(int j=i+1;j<length;j++){
+        if((masks[i]&masks[j])==0){
+            maxProd = Math.max(maxProd,words[i].length()*words[j].length());
+        }
+    }
+}
+return maxProd;
+```
+## LCR 067 数组中两个数的最大异或值
+![alt text](image-13.png)
+```java
+int max = Arrays.stream(nums).max().getAsInt();
+int highBit = 31 - Integer.numberOfLeadingZeros(max);
+
+int ans = 0,mask=0;
+Set<Integer> seen = new HashSet<>();
+for(int i=highBit;i>=0;i--){//从最高位开始枚举，因为数大不大看的是最高位为1的位置是否靠前
+    seen.clear();
+    mask = mask | (1 << i);//mask: 0b111100000000（mask是一个高位不断置1的数）
+    int newAns = ans | (1<<i);//先假设ans的第i位可以为1，保存为newAns
+    for(int x:nums){//遍历所有的nums
+        x = x & mask;//低于i的比特位置为0
+        if(seen.contains(newAns ^ x)){
+            ans  = newAns;//若ans的第i位真的可以为1，更新ans
+            break;
+        }
+        seen.add(x);//对于i=3来说，newAns=11100 add(00000) add(01000) add(00100) add(11000)
+                                //     x=          00000      01000      00100      11000
+                                //newAns=11100=    11100      11100      11100      11100
+                                //newAns ^ x=      11100      10100      11000      00100(与set中的元素重复)
+    }
+}
+return ans;
+```
+# 双指针
+## LCR 139 训练计划Ⅰ（将奇数放前面，偶数放后面）
+1.指针left从左向右寻找偶数
+2.指针right从右向左寻找技术
+3.将偶数actions[i]和技术actions[j]交换
+```java
+int left =0,right= actions.length-1;
+while(left<right){
+    while(left<right && (actions[left]&1)==1)left++;
+    while(left<right && (actions[right]&1)==0)right--;
+    int tmp = actions[left];
+    actions[left] = actions[right];
+    actions[right] = tmp;
+}
+return actions;
+```
+## LCR 006 两数之和Ⅱ-输入有序数组
+对于有序数组，找两数之和等于target，只需要初始化两指针不断对向移动即可，可以数学证明不会漏掉
+## LCR 007 三数之和
+```java
+if(nums.length<=2) return new ArrayList<>();
+Arrays.sort(nums);
+List<List<Integer>> lists = new ArrayList<>();
+for(int i=0;i<nums.length-2;i++){//首先固定一个nums[i]，后从nums[i+1]~nums[length-1]寻找（n^2）的复杂度
+    if(nums[i]>0)break;
+    if(i>0 && nums[i] == nums[i-1])continue;
+    int l=i+1,r=nums.length-1;
+    while(l<r){
+        if(l>i+1 && nums[l]==nums[l-1]){
+            l++;
+            continue;
+        }
+        int lrSum = nums[l]+nums[r];
+        if(lrSum == -nums[i]){
+            List<Integer> list = new ArrayList<>();
+            list.add(nums[i]);
+            list.add(nums[l]);
+            list.add(nums[r]);
+            lists.add(list);
+            l++;
+            r--;
+        }
+        else if (lrSum<-nums[i])l++;
+        else r--;
+    }
+}
+return lists;
+```
+## LCR 009 乘积小于K的子数组
+[10,5,2,6], k = 100
+[10], [5], [2], [6], [10,5], [5,2], [2,6], [5,2,6]
+滑动窗口
+但是注意滑到[5][2][6]时，[2][6],[6]都是符合题意的
+即l r符合时
+l+1,r l+2,r l+3,r ... r-1,r都是符合的
+所以ans+= right-left+1
+```java
+if(k<=1)return 0;
+int ans = 0,n=nums.length,prod=1,left=0;
+for(int right = 0;right<n;++right){
+    prod *= nums[right];
+    while(prod>=k){
+        prod /= nums[left++];
+    }
+    ans += right-left +1;//重要
+}
+return ans;
+```
+## LCR 010 和为K的子数组
+不可以使用滑动窗口，因为有负数
+需要使用前缀和来防止超时，同时计算两次也会超时，所以需要边构建前缀和边判断
+```java
+int ans=0,n=nums.length,pre=0;
+HashMap<Integer,Integer> mp = new HashMap<>();//key是sum的值，value是当前sum值出现过的次数
+mp.put(0,1);//一开始我们需要初始化一个int sum=0用于统计和，自然sum=0就出现一次了
+for(int i=0;i<n;i++){
+    pre += nums[i];//计算前缀和
+    if(mp.containsKey(pre-k)){//有点像动态规划
+        ans += mp.get(pre-k);
+    }
+    mp.put(pre,mp.getOrDefault(pre,0)+1);
+}
+return ans;
+```
+## LCR 011 连续数组
+0和1的数量相同 等价于 1的数量减去0的数量等于0
+可以将数组中的0视为-1，原问题转换成 求最长的连续子数组，其元素和为0
+于是需要前缀和
+```java
+int maxLength = 0;
+Map<Integer,Integer> map = new HashMap<>();//key为前缀和，value为最早出现的坐标
+int counter=0;
+map.put(counter,-1);
+int n = nums.length;
+for(int i=0;i<n;i++){
+    int num = nums[i];
+    if(num==1){
+        counter++;
+    }else{//若为0，减1
+        counter--;
+    }
+    if(map.containsKey(counter)){//若有值，表示当前的counter对应的坐标i，和之前第一次出现当前和为counter对应的坐标prevIndex
+                                    //两个减一减为0，所以是一段有效的子数组，所以可以更新最大长度
+        int prevIndex = map.get(counter);
+        maxLength = Math.max(maxLength,i-prevIndex);
+    }else{
+        map.put(counter,i);
+    }
+}
+return maxLength;
+```
+## LCR 013 二位区域和检索-矩阵不可变
+由于时间要求，需要保存前缀和来实现快速检索
+![alt text](image-4.png)
+```java
+int[][] sums;
+
+public NumMatrix(int[][] matrix) {
+    int m = matrix.length;
+    if (m > 0) {
+        int n = matrix[0].length;
+        sums = new int[m + 1][n + 1];
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                sums[i + 1][j + 1] = sums[i][j + 1] + sums[i + 1][j] - sums[i][j] + matrix[i][j];
+            }
+        }
+    }
+}
+
+public int sumRegion(int row1, int col1, int row2, int col2) {
+    return sums[row2 + 1][col2 + 1] - sums[row1][col2 + 1] - sums[row2 + 1][col1] + sums[row1][col1];
+}
+```
+## LCR 017 最小覆盖字串
+返回 s 中包含 t 的所有字符的最短子字符串
+输入：s = "ADOBECODEBANC", t = "ABC"
+输出："BANC" 
+实际上也是一个滑动窗口
+```java
+Map<Character,Integer> ori = new HashMap<>();//记录了短的字符串的信息
+Map<Character,Integer> cnt = new HashMap<>();
+
+public String minWindow(String s, String t) {
+    int tLen = t.length();
+    for (int i=0;i<tLen;i++){
+        char c = t.charAt(i);
+        ori.put(c,ori.getOrDefault(c,0)+1);//获取map中key为c的值并+1，若没有，返回0并+1
+    }
+    int l=0,r=-1;
+    int len = Integer.MAX_VALUE,ansL=-1,ansR=-1;
+    int sLen = s.length();
+    while(r<sLen){
+        ++r;
+        if(r<sLen && ori.containsKey(s.charAt(r))){//如果ori里包含则加入
+            char c = s.charAt(r);
+            cnt.put(c,cnt.getOrDefault(c,0)+1);
+        }
+        while(check() && l<=r){//满足条件并更新最小长度
+            if(r-l+1<len){
+                len=r-l+1;
+                ansL=l;
+                ansR=l+len;
+            }
+            char c = s.charAt(l);//滑动窗口最左侧字符
+            if(ori.containsKey(c)){//如果最左侧字符在ori中，踢出最左侧字符
+                cnt.put(c,cnt.getOrDefault(c,0)-1);
+            }
+            ++l;
+        }
+    }
+    return ansL == -1 ? "" : s.substring(ansL,ansR);
+}
+
+public boolean check(){
+    Iterator iter = ori.entrySet().iterator();//若cnt尚未达到ori 返回false
+    while(iter.hasNext()){
+        Map.Entry entry = (Map.Entry)iter.next();
+        Character key = (Character)entry.getKey();//ori的key
+        Integer val = (Integer)entry.getValue();//ori的value
+        if(cnt.getOrDefault(key,0)<val){//若cnt中的key对应的value小于ori的 返回false
+            return false;
+        }
+    }
+    return true;
+}
+```
+## LCR 019 验证回文串Ⅱ
+判断删除一个字符能否得到一个回文字符串
+```java
+public boolean validPalindrome(String s) {
+    int low=0,high=s.length()-1;
+    while(low<high){
+        char c1 = s.charAt(low),c2=s.charAt(high);
+        if(c1==c2){//先慢慢向中心收缩
+            ++low;
+            --high;
+        }else{//如果碰到不相等，判断去掉left是否相等，去掉right是否相等
+            return validPalindrome(s,low,high-1) || validPalindrome(s,low+1,high);
+        }
+    }
+    return true;
+}
+public boolean validPalindrome(String s,int low,int high) {
+    for(int i=low,j=high;i<j;++i,--j){
+        char c1 = s.charAt(i),c2=s.charAt(j);
+        if(c1 !=c2){
+            return false;
+        }
+    }
+    return true;
+}
+```
+## LCR 020 回文子串
+s = "aaa"
+6个回文子串: "a", "a", "a", "aa", "aa", "aaa"
+枚举所有字串，并判断回文（复杂度太高）
+中心拓展法
+枚举每一个可能的回文中心，然后用两个指针分别向左右两边拓展，当两个指针指向的元素相同的时候就拓展，否则停止拓展。
+需要修改一下原始字符串
+"aaa"->"#a#a#a#"
+ str    newstr
+```java
+int n=s.length(),ans=0;
+for(int i=0;i<2*n-1;++i){//枚举回文中心，以i为newstr.charAt(i)为中心
+    int l=i/2,r=i/2+i%2;
+    while(l>=0 && r<n && s.charAt(l) == s.charAt(r)){
+        --l;
+        ++r;
+        ++ans;
+    }
+}
+return ans;
+```
+动态规划写法
+```java
+public int countSubstrings(String s) {
+    int n=s.length();
+    char sChar[]=s.toCharArray();
+    int res=0;
+    boolean dp[][]=new boolean [n][n];
+    for(int j=0; j<n; j++){
+        for(int i=j;i>=0;i--){
+            if(sChar[i]==sChar[j] && (j-i<3 || dp[i+1][j-1])) {
+                dp[i][j]=true;
+                res++;
+            }
+        }
+    }
+    return res;
+}
+```
+# 链表
+## LCR 021 删除链表的倒数第N个节点
+先得到一个领先head节点N个数的节点，再同时遍历（先走N步再一起走）
+## LCR 022 环形链表Ⅱ
+思路1.通过hashset记录遍历过的节点，通过contains比较
+思路2.通过快慢指针，快指针每次走2步，慢指针每次走1步
+设链表共有a+b个节点，其中链表头部到链表入口有a个节点，链表环有b个节点
+第一次相遇：
+设两指针分别走了f，s步，则有f=2s；f=s+nb；->s=nb
+两式相减得s=nb，即fast和slow指针分别走了2n，n个环的周长
+第二次相遇：（同速了）
+此时f=0，s=nb
+当f=a时，s=a+nb，此时两指针必定重合
+```java
+ListNode fast = head, slow = head;
+while (true) {
+    if (fast == null || fast.next == null) return null;
+    fast = fast.next.next;
+    slow = slow.next;
+    if (fast == slow) break;//第一次相遇
+}
+fast = head;//fast从头开始
+while (slow != fast) {
+    slow = slow.next;
+    fast = fast.next;
+}
+return fast;
+```
+## LCR 024 反转链表
+```java
+ListNode cur = head, pre = null;//pre=null比较重要
+while(cur != null) {
+    ListNode tmp = cur.next; // 暂存后继节点 cur.next
+    cur.next = pre;          // 修改 next 引用指向
+    pre = cur;               // pre 暂存 cur
+    cur = tmp;               // cur 访问下一节点
+}
+return pre;
+```
+## LCR 025 两数相加Ⅱ
+```java
+Deque<Integer> stack1 = new ArrayDeque();
+Deque<Integer> stack2 = new ArrayDeque();
+while(l1 !=null){
+    stack1.push(l1.val);
+    l1=l1.next;
+}
+while(l2!=null){
+    stack2.push(l2.val);//使用栈保存确保操作的是最低位
+    l2=l2.next;
+}
+int carry=0;
+ListNode ans = null;
+while(!stack1.isEmpty() || !stack2.isEmpty() || carry!=0){
+    int a = stack1.isEmpty() ? 0 : stack1.pop();
+    int b = stack2.isEmpty() ? 0 : stack2.pop();
+    int cur = a+b+carry;
+    carry=cur/10;//重新计算carry，不需要清0
+    cur%=10;
+    ListNode curnode = new ListNode(cur);
+    curnode.next = ans;
+    ans = curnode;
+}
+return ans;
+```
+## LCR 026 重排链表
+拆分成两个链表
+反转一条链表
+重新合并两条链表
+```java
+public void reorderList(ListNode head) {
+    if(head == null){
+        return ;
+    }
+    ListNode mid = middleNode(head);
+    ListNode l1 = head;
+    ListNode l2 = mid.next;
+    mid.next = null;
+    l2 = reverseList(l2);
+    mergeList(l1,l2);
+}
+public ListNode middleNode(ListNode head){
+    ListNode slow = head;
+    ListNode fast = head;
+    while (fast.next!=null && fast.next.next!=null){
+        slow = slow.next;
+        fast = fast.next.next;
+    }
+    return slow;
+}
+public ListNode reverseList(ListNode head){
+    ListNode prev = null;
+    ListNode curr = head;
+    while(curr != null){
+        ListNode tmp = curr.next;
+        curr.next = prev;
+        prev = curr;
+        curr = tmp;
+    }
+    return prev;
+}
+public void mergeList(ListNode l1,ListNode l2){
+    ListNode l1_tmp;
+    ListNode l2_tmp;
+    while(l1 != null && l2 != null){
+        l1_tmp = l1.next;
+        l2_tmp = l2.next;
+
+        l1.next = l2;
+        l1 = l1_tmp;
+
+        l2.next=l1;
+        l2 = l2_tmp;
+    }
+}
+```
+## LCR 028 扁平化多级双向链表
+![alt text](image-6.png)
+```java
+public Node flatten(Node head){
+    dfs(head);
+    return head;
+}
+public Node dfs(Node node){
+    Node cur = node;
+    // 记录链表的最后一个节点
+    Node last = null;
+
+    while(cur != null){
+        Node next = cur.next;
+        //  如果有子节点，那么首先处理子节点
+        if(cur.child!=null){
+            Node childLast = dfs(cur.child);
+
+            next = cur.next;
+            //  将 node 与 child 相连
+            cur.next = cur.child;
+            cur.child.prev=cur;
+            //  如果 next 不为空，就将 last 与 next 相连
+            if(next!=null){
+                childLast.next=next;
+                next.prev=childLast;
+            }
+
+            cur.child=null;
+            last=childLast;
+        }else{
+            last=cur;
+        }
+        cur=next;
+    }
+    return last;
+}
+```
+## LCR 029 循环有序列表的插入
+```java
+// 1->2
+// ↑  ↓
+// 5<-4
+// 插入3 head的位置分两种情况
+//1.升序的未到3的位置
+//2.升序的到3之后的位置
+public Node insert(Node head, int insertVal) {
+    Node node = new Node(insertVal);
+    if(head==null){
+        node.next = node;
+        return node;
+    }
+    if(head.next==head){
+        head.next = node;
+        node.next = head;
+        return head;
+    }
+    Node curr=head,next=head.next;
+    while(next!=head){
+        if(insertVal>=curr.val && insertVal <=next.val){//情况一
+            break;
+        }
+        if(curr.val>next.val){
+            if(insertVal>curr.val || insertVal<next.val){//比5大或比1小
+                break;
+            }
+        }
+        curr=curr.next;
+        next=next.next;
+    }
+    curr.next = node;
+    node.next = next;
+    return head;
+    
+}
+```
+## LCR 077 排序链表
+先二分再合并
+```java
+public ListNode sortList(ListNode head) {
+    return sortList(head,null);
+}
+public ListNode sortList(ListNode head,ListNode tail){
+    if(head == null){
+        return head;
+    }
+    if(head.next == tail){
+        head.next = null;
+        return head;
+    }
+    ListNode slow = head,fast = head;
+    while(fast!=tail){
+        slow = slow.next;
+        fast = fast.next;
+        if(fast!=tail){
+            fast = fast.next;
+        }
+    }
+    ListNode mid = slow;
+    ListNode list1 = sortList(head,mid);
+    ListNode list2 = sortList(mid,tail);
+    ListNode sorted = merge(list1,list2);
+    return sorted;
+}
+public ListNode merge(ListNode head1,ListNode head2){
+    ListNode dummyHead = new ListNode(0);
+    ListNode temp = dummyHead,temp1 = head1,temp2 = head2;
+    while(temp1!=null && temp2!=null){
+        if(temp1.val<=temp2.val){
+            temp.next = temp1;
+            temp1 = temp1.next;
+        }else{
+            temp.next =temp2;
+            temp2 = temp2.next;
+        }
+        temp = temp.next;
+    }
+    if(temp1!=null){
+        temp.next = temp1;
+    }else if(temp2!=null){
+        temp.next = temp2;
+    }
+    return dummyHead.next;
+}
+```
+## LCR 078 合并K个升序链表
+先不断二分，直到问题变为合并2个升序链表，再从小到大合并
+```java
+public ListNode mergeKLists(ListNode[] lists) {
+    return mergeKLists(lists,0,lists.length);
+}
+private ListNode mergeKLists(ListNode[] lists, int i ,int j){
+    int m = j-i;
+    if(m==0)return null;
+    if(m==1)return lists[i];
+    ListNode left = mergeKLists(lists,  i,        i+m/2);
+    ListNode right = mergeKLists(lists, i+m/2,   j);
+    return mergeTwoLists(left,right);
+}
+private ListNode mergeTwoLists(ListNode list1,ListNode list2){
+    ListNode dummy = new ListNode();
+    ListNode cur = dummy;
+    while(list1 != null && list2 != null){
+        if(list1!=null && list2!=null){
+            if(list1.val<list2.val){
+                cur.next = list1;
+                list1 = list1.next;
+            }else{
+                cur.next=  list2;
+                list2 = list2.next;
+            }
+            cur = cur.next;
+        }
+    }
+    cur.next = list1 !=null ?list1:list2;
+    return dummy.next;
+}
+```
+# 堆栈队列
+## LCR 030 O(1)时间插入、删除和获取随机元素
+变长数组+哈希表
+插入操作时，首先判断 val 是否在哈希表中，如果已经存在则返回 false，如果不存在则插入 val，操作如下：
+在变长数组的末尾添加 val；
+在添加 val 之前的变长数组长度为 val 所在下标 index，将 val 和下标 index 存入哈希表；
+返回 true。
+
+删除操作时，首先判断 val 是否在哈希表中，如果不存在则返回 false，如果存在则删除 val，操作如下：
+从哈希表中获得 val 的下标 index；
+将变长数组的最后一个元素 last 移动到下标 index 处，在哈希表中将 last 的下标更新为 index；
+在变长数组中删除最后一个元素，在哈希表中删除 val；
+返回 true
+```java
+//remove(val)：当元素 val 存在时返回 true ，并从集合中移除该项，否则返回 false 。
+public boolean remove(int val) {//取出val所在 nums 的下标 loc，然后将 nums[idx] 赋值到 loc 位置，并更新 idx（含义为将原本处于 loc 位置的元素删除），同时更新原本位于 idx 位置的数在哈希表中的值为 loc
+    if (!indices.containsKey(val)) {
+        return false;
+    }
+    int index = indices.get(val);
+    int last = nums.get(nums.size() - 1);
+    nums.set(index, last);
+    indices.put(last, index);
+    nums.remove(nums.size() - 1);
+    indices.remove(val);
+    return true;
+}
+```
+## LCR 031 LRU缓存
+```java
+private static class Node{
+    int key,value;
+    Node prev,next;
+    Node(int k,int v){
+        key=k;
+        value=v;
+    }
+}
+private final int capacity;
+private final Node dummy = new Node(0,0);
+private final Map<Integer,Node> keyToNode = new HashMap<>();
+
+public LRUCache(int capacity) {
+    this.capacity = capacity;
+    dummy.prev = dummy;
+    dummy.next = dummy;
+}
+
+public int get(int key) {
+    Node node = getNode(key);
+    return node != null ? node.value:-1;
+}
+
+public void put(int key, int value) {
+    Node node = getNode(key);
+    if(node !=null){//有这本书
+        node.value =value;//更新value
+        return;
+    }
+    node=new Node(key,value);//新书
+    keyToNode.put(key,node);
+    pushFront(node);//放在最上面
+    if(keyToNode.size()>capacity){//书太多了
+        Node backNode = dummy.prev;
+        keyToNode.remove(backNode.key);
+        remove(backNode);//去掉最后一本书
+    }
+}
+private Node getNode(int key){
+    if(!keyToNode.containsKey(key)){//没有这本书
+        return null;
+    }
+    Node node = keyToNode.get(key);//有这本书
+    remove(node);
+    pushFront(node);
+    return node;
+}
+//删除一个节点（抽出一本书）
+private void remove(Node x){
+    x.prev.next = x.next;
+    x.next.prev = x.prev;
+}
+//在链表头添加一个节点（把一本书放在最上面）
+private void pushFront(Node x){
+    x.prev = dummy;
+    x.next = dummy.next;
+    x.prev.next = x;
+    x.next.prev = x;
+}
+```
+## LCR 036 逆波兰表达式求值
+tokens = ["10","6","9","3","+","-11","*","/","*","17","+","5","+"]
+该算式转化为常见的中缀算术表达式为：
+  ((10 * (6 / ((9 + 3) * -11))) + 17) + 5
+= ((10 * (6 / (12 * -11))) + 17) + 5
+= ((10 * (6 / -132)) + 17) + 5
+= ((10 * 0) + 17) + 5
+= (0 + 17) + 5
+= 17 + 5
+= 22
+```java
+public int evalRPN(String[] tokens) {
+    Deque<Integer> stack = new ArrayDeque<Integer>();
+    int n = tokens.length;
+    for(int i =0;i<n;i++){
+        String token = tokens[i];
+        if(isNumber(token)){
+            stack.push(Integer.parseInt(token));
+        }else{
+            int num2 = stack.pop();
+            int num1 = stack.pop();
+            switch(token){
+                case "+":
+                    stack.push(num1 + num2);
+                    break;
+                case "-":
+                    stack.push(num1 - num2);
+                    break;
+                case "*":
+                    stack.push(num1 * num2);
+                    break;
+                case "/":
+                    stack.push(num1 / num2);
+                    break;
+                default:
+            }
+        }
+    }
+    return stack.pop();
+}
+public boolean isNumber(String token){
+    return !("+".equals(token) || "-".equals(token) || "*".equals(token) || "/".equals(token));
+}
+```
+## LCR 037 行星碰撞
+对于数组中的每一个元素，其绝对值表示小行星的大小，正负表示小行星的移动方向（正表示向右移动，负表示向左移动）。每一颗小行星以相同的速度移动。
+找出碰撞后剩下的所有小行星。碰撞规则：两个行星相互碰撞，较小的行星会爆炸。如果两颗行星大小相同，则两颗行星都会爆炸。两颗移动方向相同的行星，永远不会发生碰撞。
+asteroids = [10,2,-5]
+[10]
+2 和 -5 发生碰撞后剩下 -5 。10 和 -5 发生碰撞后剩下 10
+```java
+Deque<Integer> stack = new ArrayDeque();
+for(int aster:asteroids){//刚开始的负数可以忽略，因为他们是向左移动的
+    boolean alive = true;//用来表示行星是否存活，即若行星为负，其绝对值是否大于栈内的所有元素，若没有大于，则死亡
+    while(alive && aster <0 && !stack.isEmpty() && stack.peek()>0){
+        alive = stack.peek()<-aster;//aster是否存在
+        if(stack.peek()<=-aster){//栈顶小行星爆炸
+            stack.pop();
+        }
+    }
+    if(alive){
+        stack.push(aster);
+    }
+}
+int size = stack.size();
+int[] ans = new int[size];
+for(int i =size-1;i>=0;i--){
+    ans[i] =stack.pop();
+}
+return ans;
+```
+## LCR 038 每日温度（单调栈）
+temperatures = [73,74,75,71,69,72,76,73]
+                    [1,1,4,2,1,1,0,0]
+![alt text](image-7.png)
+从后向前遍历
+· 栈为空，将6入栈
+· 3比栈顶6小，将3入栈，直接记录答案1
+· 2比栈顶3小，将2入栈，直接记录答案1
+· 5比栈顶2大，将2出栈，比栈顶3大，将3出栈，将5入栈，记录答案3
+· 5和栈顶5相同，将旧5出栈，将新5入栈，记录答案1（这里要看题目怎么定义重复的数字）
+· 3比栈顶5小，将3入栈，直接记录答案1
+· 4比栈顶3大，将3出栈，将4入栈，记录答案2
+· 1比栈顶4小，将1入栈，记录答案1
+```java
+int n = temperatures.length;
+int[] ans = new int[n];
+Deque<Integer> st = new ArrayDeque<>();//单调栈，栈底大栈顶小，存的是下标，非实际温度
+for (int i = n - 1; i >= 0; i--) {
+    int t = temperatures[i];
+    while (!st.isEmpty() && t >= temperatures[st.peek()]) {//栈非空 且 当前温度比栈顶温度大
+        st.pop();
+    }
+    if (!st.isEmpty()) {
+        ans[i] = st.peek() - i;
+    }
+    st.push(i);
+}
+return ans;
+```
+## LCR 039 柱状图中最大的矩形（单调栈）
+![alt text](image-8.png)
+对于高为5的柱子来说，其左边等于下标1的柱子，右边等于下标为4的柱子
+![alt text](153f6ef4f21c6f6c5bbeb1fa816c018.jpg)
+```java
+//左    -1  -1  1   2   1   4
+//右    1   6   4   4   6   6
+//高    2   1   5   6   2   3
+//面积为（右-左-1）*高
+//需要构建左和右两数组
+int n = heights.length;
+int[] left = new int[n];
+Deque<Integer> st = new ArrayDeque<>();
+for (int i = 0; i < n; i++) {//构建左数组
+    int x = heights[i];
+    while (!st.isEmpty() && x <= heights[st.peek()]) {//栈不为空 且 当前高度小于栈顶高度
+        st.pop();
+    }
+    left[i] = st.isEmpty() ? -1 : st.peek();
+    st.push(i);
+}
+
+int[] right = new int[n];
+st.clear();
+for (int i = n - 1; i >= 0; i--) {//构建右数组
+    int x = heights[i];
+    while (!st.isEmpty() && x <= heights[st.peek()]) {
+        st.pop();
+    }
+    right[i] = st.isEmpty() ? n : st.peek();
+    st.push(i);
+}
+
+int ans = 0;
+for (int i = 0; i < n; i++) {
+    ans = Math.max(ans, heights[i] * (right[i] - left[i] - 1));
+}
+return ans;
+```
+## LCR 076 数组中的第K个最大元素（手写堆）
+
+```java
+public int findKthLargest(int[] nums, int k) {
+    int heapSize = nums.length;
+    buildMaxHeap(nums,heapSize);
+    for(int i = nums.length-1;i>=nums.length-k+1;--i){
+        swap(nums,0,i);
+        --heapSize;
+        maxHeapfy(nums,0,heapSize);
+    }
+    return nums[0];
+
+}
+public void buildMaxHeap(int[] a,int heapSize){
+    for(int i=heapSize/2;i>=0;--i){
+        maxHeapfy(a,i,heapSize);
+    }
+}
+public void maxHeapfy(int[] a,int i,int heapSize){
+    int l = i*2+1,r=i*2+2,largest = i;
+    if(l<heapSize && a[l]>a[largest]){
+        largest=l;
+    }
+    if(r<heapSize && a[r]>a[largest]){
+        largest = r;
+    }
+    if(largest !=i ){
+        swap(a,i,largest);
+        maxHeapfy(a,largest,heapSize);
+    }
+}
+public void swap(int[] a,int i,int j){
+    int temp = a[i];
+    a[i] = a[j];
+    a[j] = temp;
+}
+```
 ## LCR 147 最小栈
 要求取栈中最小元素的时间为O(1)
 push,pop,top时间也为O(1)
@@ -65,6 +945,662 @@ for(int num:putIn){
 }
 return stack.isEmpty();
 ```
+## LCR 160 数据流的中位数
+记得使用两个优先队列，java中PriorityQueue是小顶堆
+```java
+PriorityQueue<Integer> A; 
+PriorityQueue<Integer> B; 
+int count;
+
+/** initialize your data structure here. */
+public MedianFinder() {
+    A = new PriorityQueue<>();//A的堆顶为最小值，所以A存储所有整数 大的一半
+    B = new PriorityQueue<>((o1,o2)->o2-o1);//B的堆顶为最大值，所以B存储所有整数 小的一半
+}
+
+public void addNum(int num) {
+    if(A.size()!=B.size()){//A中多一个元素
+        A.add(num);
+        B.add(A.poll());//B加入A中新排出来的最小的元素
+    }else{
+        B.add(num);
+        A.add(B.poll());
+    }
+}
+
+public double findMedian() {
+    return A.size() != B.size() ? A.peek() : (A.peek()+B.peek())/2.0;
+}
+```
+# 二分查找(满足单调递增或递减特性)
+## LCR 070 有序数组中的单一元素
+给定一个只包含整数的有序数组 nums ，每个元素都会出现两次，唯有一个数只会出现一次，请找出这个唯一的数字
+nums = [1,1,2,3,3,4,4,8,8]
+可以用异或解决，但是时间复杂度为O(n)
+O(log n)需要使用二分查找
+```java
+//如果mid所对应的一对数字下标是(奇数，偶数)，那么目标一定在mid之前，如果下标是(偶数，奇数)，目标一定在mid之后
+int low = 0, high = nums.length - 1;
+while (low < high) {
+    int mid = (high - low) / 2 + low;
+    mid -= mid & 1;
+    if (nums[mid] == nums[mid + 1]) {
+        low = mid + 2;
+    } else {
+        high = mid;
+    }
+}
+return nums[low];
+```
+## LCR 071 按权重随机选择
+Solution solution = new Solution([1, 3]);
+solution.pickIndex(); // 返回 1，返回下标 1，返回该下标概率为 3/4 。
+solution.pickIndex(); // 返回 1
+solution.pickIndex(); // 返回 1
+solution.pickIndex(); // 返回 1
+solution.pickIndex(); // 返回 0，返回下标 0，返回该下标概率为 1/4 。
+构建一个前缀和数组，可以通过随机生成0~总和中间的随机数实现取邻近的值
+```java
+private final Random random = new Random();
+private final int[] prefixSum;//[1,4]
+private final int sum;
+public Solution(int[] w) {
+    prefixSum = new int[w.length];//
+    int innersum=0;
+    for(int i =0;i<w.length;i++){
+        prefixSum[i] = innersum + w[i];
+        innersum = prefixSum[i];
+    }
+    sum = prefixSum[w.length-1];
+}
+
+public int pickIndex() {
+    //random.nextInt(sum)会等概率随机取[0,sum-1]中的任意一个数字
+    int target = random.nextInt(sum) + 1;
+    int left = 0,right=prefixSum.length-1;
+    while(left<=right){//通过二分查找快速找到下标，因为前缀和数组是递增的
+        int mid = (left+right)/2;
+        if(prefixSum[mid]<target){
+            left=mid+1;
+        }else{
+            right=mid-1;
+        }
+    }
+    return left;
+}
+```
+## LCR 073 爱吃香蕉的狒狒
+每个小时，她将会选择一堆香蕉，从中吃掉 K 根。如果这堆香蕉少于 K 根，她将吃掉这堆的所有香蕉
+返回她可以在 H 小时内吃掉所有香蕉的最小速度 K
+输入: piles = [30,11,23,4,20], H = 5
+输出: 30
+```java
+public int minEatingSpeed(int[] piles, int h) {
+    //二分查找的下界是1，上界是最多的一堆中的香蕉数目，单调递增，所以可以二分查找
+    int left=1;
+    int right=Arrays.stream(piles).max().getAsInt();
+    int k = right;
+    while(left<=right){
+        int mid = (right-left)/2+left;//防止溢出
+        long time = getTime(piles,mid);
+        if(time<=h){
+            k = mid;
+            right=mid-1;
+        }else{
+            left=mid+1;
+        }
+    }
+    return k;
+}
+public long getTime(int[] piles,int speed){
+    long time=0;
+    for(int pile:piles){
+        int curTime = (pile + speed -1)/speed;
+        time+=curTime;
+    }
+    return time;
+}
+```
+# 其他
+## LCR 034 验证外星语字典
+words = ["hello","leetcode"], order = "hlabcdefgijkmnopqrstuvwxyz"
+```java
+int[] index = new int[26];
+for(int i=0;i<order.length();++i){//首先记录字母的权重，比如h的权重为0，l的权重为1，z的权重为25
+    index[order.charAt(i)-'a']=i;
+}
+for(int i=1;i<words.length;i++){//遍历所有单词
+    boolean valid = false;
+    for(int j=0;j<words[i-1].length() && j<words[i].length();j++){//遍历前后单词的所有字母，从前一个单词的第一个和当前单词的第一个开始
+        int prev = index[words[i-1].charAt(j)-'a'];//前一个字符的权重
+        int curr = index[words[i].charAt(j)-'a'];//当前字符的权重
+        if(prev<curr){//前一个字符的权重小，所以出现在前面，放行
+            valid = true;
+            break;
+        }else if(prev>curr){
+            return false;
+        }
+    }
+    if(!valid){
+        if(words[i-1].length()>words[i].length()){
+            return false;
+        }
+    }
+}
+return true;
+```
+## LCR 040 最大矩形
+![alt text](image-9.png)
+![alt text](image-10.png)
+![alt text](image-11.png)
+![alt text](image-12.png)
+```java
+//看官解图示，很清晰
+int m = matrix.length;
+if(m==0){
+    return 0;
+}
+int n = matrix[0].length();
+int[][] left = new int[m][n];
+
+//left[i][j] 为矩阵第 i 行第 j 列元素的左边连续 1 的数量。
+for(int i=0;i<m;i++){
+    for(int j=0;j<n;j++){
+        if(matrix[i].charAt(j) == '1'){
+            left[i][j] = (j==0 ? 0 : left[i][j-1])+1;
+        }
+    }
+}
+int ret = 0;
+//计算以i，j为右下角的矩形的面积
+for(int i =0;i<m;i++){
+    for(int j=0;j<n;j++){
+        if(matrix[i].charAt(j)=='0'){
+            continue;
+        }
+        int width = left[i][j];//当前行左侧连续的1的数量
+        int area =width;
+        for(int k =i-1;k>=0;k--){//从i行开始往上扫，height增加的过程
+            width = Math.min(width,left[k][j]);
+            area = Math.max(area,(i-k+1)*width);
+        }
+        ret = Math.max(ret,area);
+    }
+}
+return ret;
+```
+# 特定知识
+## LCR 020 回文字串（Manacher算法）
+![alt text](image-5.png)
+可以通过大蘑菇的伞盖和左边包括的小蘑菇直接推断出右侧大部分蘑菇的分布情况
+## （KMP算法）
+## LCR 057 存在重复元素Ⅲ（桶排序）
+给你一个整数数组 nums 和两个整数 k 和 t 。请你判断是否存在 两个不同下标 i 和 j，使得 abs(nums[i] - nums[j]) <= t ，同时又满足 abs(i - j) <= k 。
+
+如果存在则返回 true，不存在返回 false。
+
+对于元素 x，其影响的区间为 [x−t,x+t]。于是我们可以设定桶的大小为 t+1。如果两个元素同属一个桶，那么这两个元素必然符合条件。如果两个元素属于相邻桶，那么我们需要校验这两个元素是否差值不超过 t。如果两个元素既不属于同一个桶，也不属于相邻桶，那么这两个元素必然不符合条件。
+
+具体地，我们遍历该序列，假设当前遍历到元素 x，那么我们首先检查 x 所属于的桶是否已经存在元素，如果存在，那么我们就找到了一对符合条件的元素，否则我们继续检查两个相邻的桶内是否存在符合条件的元素。
+```java
+public boolean containsNearbyAlmostDuplicate(int[] nums, int k, int t) {
+    int n = nums.length;
+    Map<Long,Long> map = new HashMap();
+    long w = (long)t+1;
+    for(int i=0;i<n;i++){
+        long id =  getID(nums[i],w);//每个桶的上下界范围为t
+        if(map.containsKey(id)){//如果当前桶之前已存在，说明一个桶里放了两个元素
+            return true;
+        }
+        if(map.containsKey(id-1) && Math.abs(nums[i]-map.get(id-1))<w){//如果相邻桶存在，进一步判断
+            return true;
+        }
+        if(map.containsKey(id+1) && Math.abs(nums[i]-map.get(id+1))<w){//如果相邻桶存在，进一步判断
+            return true;
+        }
+        map.put(id,(long)nums[i]);
+        if(i>=k){
+            map.remove(getID(nums[i-k],w));//移除第一个元素（队列）
+        }
+    }
+    return false;
+}
+public long getID(long x,long w){//获得桶的id，是第几个桶
+    if(x>=0){
+        return x/w;
+    }
+    return (x+1)/w-1;
+}
+```
+## LCR 058 我的日程安排表Ⅰ（线段树TreeMap）
+注意放入TreeMap中的元素需要实现comparable接口
+Integer实现了comparable接口
+重点记忆TreeMap的floorEntry(T key)和ceilingEntry(T key)方法
+MyCalendar.book(10, 20); // returns true 
+MyCalendar.book(15, 25); // returns false ，第二个日程安排不能添加到日历中，因为时间 15 已经被第一个日程安排预定了
+```java
+TreeMap<Integer,Integer> events;
+public MyCalendar() {
+    events = new TreeMap<Integer,Integer>();
+}
+public boolean book(int start, int end) {
+    Map.Entry<Integer,Integer> before = events.floorEntry(start);
+    if(before!=null)
+    {
+        if(before.getValue()>start) return false;
+    }
+    Map.Entry<Integer,Integer> after = events.ceilingEntry(start);
+    if(after!=null)
+    {
+        if(end>after.getKey()) return false;
+    }
+    events.put(start,end);
+    return true;
+}
+```
+## LCR 138 有效数字（有限状态自动机）
+首先定义出9种状态
+    0开始的空格
+    1幂符号前的正负号
+    2小数点前的数字
+    3小数点、小数点后的数字
+    4当小数点前为空格时，小数点、小数点后的数字
+    5幂符号
+    6幂符号后的正负号
+    7幂符号后的数字
+    8结尾的空格
+合法的结束状态：2，3，7，8
+![alt text](image-3.png)
+一种状态可以根据某输入转换到另外一个状态
+如
+```java
+new HashMap<>() {{ put(' ', 0); put('s', 1); put('d', 2); put('.', 4); }},
+当输入为' '时，跳到状态0
+当输入为's'时，跳到状态1
+当输入为'd'时，跳到状态2
+当输入为'.'时，跳到状态4
+```
+```java
+public boolean validNumber(String s) {
+    Map[] states = {
+        new HashMap<>() {{ put(' ', 0); put('s', 1); put('d', 2); put('.', 4); }}, // 0.
+        new HashMap<>() {{ put('d', 2); put('.', 4); }},                           // 1.
+        new HashMap<>() {{ put('d', 2); put('.', 3); put('e', 5); put(' ', 8); }}, // 2.
+        new HashMap<>() {{ put('d', 3); put('e', 5); put(' ', 8); }},              // 3.
+        new HashMap<>() {{ put('d', 3); }},                                        // 4.
+        new HashMap<>() {{ put('s', 6); put('d', 7); }},                           // 5.
+        new HashMap<>() {{ put('d', 7); }},                                        // 6.
+        new HashMap<>() {{ put('d', 7); put(' ', 8); }},                           // 7.
+        new HashMap<>() {{ put(' ', 8); }}                                         // 8.
+    };
+    int p = 0;
+    char t;
+    for(char c : s.toCharArray()) {
+        if(c >= '0' && c <= '9') t = 'd';
+        else if(c == '+' || c == '-') t = 's';
+        else if(c == 'e' || c == 'E') t = 'e';
+        else if(c == '.' || c == ' ') t = c;
+        else t = '?';
+        if(!states[p].containsKey(t)) return false;
+        p = (int)states[p].get(t);//states[p].get(t)表示从一种状态转换到另一种状态
+    }
+    return p == 2 || p == 3 || p == 7 || p == 8;
+}
+```
+## LCR 060 前K个高频元素（Comparable和Comparator）
+```java
+Map<Integer,Integer> map = new HashMap();
+for(Integer num :nums){
+    map.put(num,map.getOrDefault(num,0)+1);
+}
+//int[]的第一个元素代表数组的值，第二个元素代表了该值出现的次数
+PriorityQueue<int[]> queue = new PriorityQueue<int[]>(new Comparator<int[]>(){
+    public int compare(int[] m,int[] n){
+        return m[1]-n[1];
+    }
+});
+for(Map.Entry<Integer,Integer> entry: map.entrySet()){//找优先队列中count高的元素
+    int num = entry.getKey(),count = entry.getValue();
+    if(queue.size()==k){
+        if(queue.peek()[1]<count){
+            queue.poll();
+            queue.offer(new int[]{num,count});
+        }
+    }else{
+        queue.offer(new int[]{num,count});
+    }
+}
+int[] ret = new int[k];
+for(int i=0;i<k;++i){
+    ret[i] = queue.poll()[0];
+}
+return ret;
+```
+## LCR 061 查找和最小的K对数字（Comparable和Comparator）
+输入: nums1 = [1,7,11], nums2 = [2,4,6], k = 3
+nums1和nums2中各选一个，按和为序排列
+输出: [1,2],[1,4],[1,6]
+解释: 返回序列中的前 3 对数：
+    [1,2],[1,4],[1,6],[7,2],[7,4],[11,2],[7,6],[11,4],[11,6]
+```java
+//当(0,0)出堆之后，需要将(1,0),(0,1)入堆
+//(1,0),(0,1)出堆之后，会循环将(1,1)入堆
+//怎么办？规定(i,j-1)出堆时将(i,j)入堆，而(i-1,j)出堆时什么都不做
+//也就是(i,j)出堆时，只需将(i,j+1)入堆，无需将(i+1,j)入堆
+//但若按照该规则，初始仅把(0,0)入堆的话，只会得到 (0,1),(0,2),⋯ 这些下标对。
+//所以初始不仅要把 (0,0)入堆，(1,0),(2,0),⋯ 这些都要入堆。
+int n = nums1.length,m=nums2.length;
+var ans = new ArrayList<List<Integer>>(k);
+var pq = new PriorityQueue<int[]>((a,b)->a[0]-b[0]);//传入comparator，其中a和b是int[3]，即含3个元素的int数组，按元素之和排序
+for(int i=0;i<Math.min(n,k);i++)//(0,0)(1,0)...(n,0)入堆过程
+    pq.add(new int[]{nums1[i]+nums2[0],i,0});//第一个元素为两元素之和，第二个元素为nums1坐标，第三个元素为nums2坐标
+while(!pq.isEmpty() && ans.size() <k){
+    var p = pq.poll();//第一次迭代时，(0,0)出堆，(0,1)入堆;第二次迭代时，(1,0)或(0,1)出堆（取决于哪个更小），(1,1)或(0,2)入堆
+    int i= p[1],j=p[2];
+    ans.add(List.of(nums1[i],nums2[j]));
+    if(j+1<m)
+        pq.add(new int[]{nums1[i]+nums2[j+1],i,j+1});//将(i,j+1)入优先队列
+}
+return ans;
+```
+## LCR 074 合并区间（Comparable和Comparator）
+输入：intervals = [[1,3],[2,6],[8,10],[15,18]]
+输出：[[1,6],[8,10],[15,18]]
+解释：区间 [1,3] 和 [2,6] 重叠, 将它们合并为 [1,6].
+```java
+if(intervals.length==0){
+    return new int[0][2];
+}
+Arrays.sort(intervals,(interval1,interval2)-> interval1[0]-interval2[0]);//第二个参数为comparator
+//或
+// Arrays.sort(intervals,Comparator.comparingInt(a->a[0]));
+List<int[]> merged = new ArrayList();
+for(int i=0;i<intervals.length;++i){
+    int left = intervals[i][0],right = intervals[i][1];
+    if(merged.size()==0 || merged.get(merged.size()-1)[1]<left){
+        merged.add(new int[]{left,right});
+    }else{
+        merged.get(merged.size() - 1)[1] = Math.max(merged.get(merged.size()-1)[1],right);
+    }
+}
+return merged.toArray(new int[merged.size()][]);
+```
+## LCR 075 数组的相对排序（Comparable和Comparator）
+给定两个数组，arr1 和 arr2，
+arr2 中的元素各不相同
+arr2 中的每个元素都出现在 arr1 中
+对 arr1 中的元素进行排序，使 arr1 中项的相对顺序和 arr2 中的相对顺序相同。未在 arr2 中出现过的元素需要按照升序放在 arr1 的末尾。
+
+输入：arr1 = [2,3,1,3,2,4,6,7,9,2,19], arr2 = [2,1,4,3,9,6]
+输出：[2,2,2,1,4,3,3,9,6,7,19]
+```java
+Map<Integer,Integer> map = new HashMap();
+for(int i=0;i<arr2.length;i++)map.put(arr2[i],i);
+//i为权重，为comparator作准备
+var cmp = new Comparator<Integer>(){
+    public int compare(Integer a,Integer b){
+        if(map.containsKey(a) && map.containsKey(b)){
+            return map.get(a)-map.get(b);
+        }else if(map.containsKey(a)) return -1;
+        else if(map.containsKey(b)) return 1;
+        else return a-b;
+    }
+};
+List<Integer> list = Arrays.stream(arr1).boxed().collect(Collectors.toList());
+list.sort(cmp);
+return list.stream().mapToInt(Integer::valueOf).toArray();
+```
+## LCR 164 破解闯关密码（Comparable和Comparator）+贪心
+组合后值最小
+输入: password = [15, 8, 7]
+输出: "1578"
+输入: password = [0, 3, 30, 34, 5, 9]
+输出: "03033459"
+```java
+String[] strs = new String[password.length];
+for(int i=0;i<password.length;i++)
+    strs[i] = String.valueOf(password[i]);
+Arrays.sort(strs,(o1,o2)->(o1+o2).compareTo(o2+o1));//判断方法为"o1o2" "o2o1"哪个字符串的值小
+StringBuilder res = new StringBuilder();
+for(String s: strs)
+    res.append(s);
+return res.toString();
+```
+## LCR 062 实现Trie（前缀树）
+```java
+private Trie[] children;
+private boolean isEnd;
+/** Initialize your data structure here. */
+public Trie() {
+    children = new Trie[26];
+    isEnd = false;
+}
+
+/** Inserts a word into the trie. */
+public void insert(String word) {
+    Trie node = this;
+    for(int i=0;i<word.length();i++){
+        char ch = word.charAt(i);
+        int index = ch -'a';
+        if(node.children[index]==null){
+            node.children[index]=new Trie();
+        }
+        node = node.children[index];
+    }
+    node.isEnd = true;
+}
+
+/** Returns if the word is in the trie. */
+public boolean search(String word) {
+    Trie node = searchPrefix(word);
+    return node != null && node.isEnd;
+}
+
+/** Returns if there is any word in the trie that starts with the given prefix. */
+public boolean startsWith(String prefix) {
+    return searchPrefix(prefix) != null;
+}
+
+public Trie searchPrefix(String prefix){
+    Trie node = this;
+    for(int i=0;i<prefix.length();i++){
+        char ch = prefix.charAt(i);
+        int index = ch-'a';
+        if(node.children[index]==null){
+            return null;
+        }
+        node = node.children[index];
+    }
+    return node;
+}
+```
+## LCR 063 单词替换（前缀树）
+输入：dictionary = ["cat","bat","rat"], sentence = "the cattle was rattled by the battery"
+输出："the cat was rat by the bat"
+```java
+public boolean search(Trie root,String s){
+    Trie node = root;
+    for(char ch:s.toCharArray()){
+        if(node.isEnd==true)break;
+        if(node.children[ch-'a']==null)return false;
+        node = node.children[ch-'a'];
+    }
+    return true;
+}
+Trie root = new Trie();
+public String replaceWords(List<String> dictionary, String sentence) {
+    String[] words = new String[dictionary.size()];
+    for(int i=0;i<words.length;i++)words[i] = dictionary.get(i);
+    for(String word:words){//将词根插入字典树
+        insert(root,word);
+    }
+    String[] strs = sentence.split(" ");
+    for(int i=0;i<strs.length;++i){
+        //如果可以在树中找到对应单词的前缀，那么将这个单词替换为他的前缀
+        if(search(root,strs[i])){
+            strs[i]=replace(strs[i],root);
+        }
+    }
+    StringBuilder sb = new StringBuilder();
+    for(String s:strs){
+        sb.append(s).append(" ");
+    }
+    sb.deleteCharAt(sb.length()-1);
+    return sb.toString();
+}
+```
+## LCR 064 实现一个魔法字典（前缀树）
+如果给出一个单词，请判定能否只将这个单词中一个字母换成另一个字母，使得所形成的新单词存在于已构建的神奇字典中
+```java
+public boolean search(String searchWord) {
+    return dfs(searchWord,root,0,false);
+}
+private boolean dfs(String searchWord,Trie node, int pos,boolean modified){
+    if(pos==searchWord.length()){
+        return modified && node.isEnd;
+    }
+    int idx = searchWord.charAt(pos)-'a';
+    if(node.children[idx]!=null){
+        if(dfs(searchWord,node.children[idx],pos+1,modified)){//如果当前层的字典树有对应值，进入
+            return true;
+        }
+    }
+    if(!modified){//如果当前层的字典树没有对应值，并且之前没有修改过，
+                //修改当前值为当前层字典树所有存在的值进行dfs试一试，并把modified置为true表示只能修改一次
+        for(int i=0;i<26;++i){
+            if(i!=idx && node.children[i]!=null){
+                if(dfs(searchWord,node.children[i],pos+1,true)){
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+```
+## LCR 065 单词的压缩编码（后缀树）（将字符反序后插入前缀树）
+输入：words = ["time", "me", "bell"]
+输出：10
+解释：一组有效编码为 s = "time#bell#" 和 indices = [0, 2, 5] 。
+words[0] = "time" ，s 开始于 indices[0] = 0 到下一个 '#' 结束的子字符串，如加粗部分所示 "|time|#bell#"
+words[1] = "me" ，s 开始于 indices[1] = 2 到下一个 '#' 结束的子字符串，如加粗部分所示 "ti|me|#bell#"
+words[2] = "bell" ，s 开始于 indices[2] = 5 到下一个 '#' 结束的子字符串，如加粗部分所示 "time#|bell|#"
+```java
+//反序后插入字典树
+Trie trie = new Trie();
+Map<Trie,Integer> nodes = new HashMap<Trie,Integer>();
+
+for(int i =0;i<words.length;++i){
+    String word = words[i];
+    Trie cur = trie;
+    for(int j = word.length()-1;j>=0;--j){
+        cur = cur.get(word.charAt(j));//反序
+    }
+    nodes.put(cur,i);//cur指向字典树的叶子节点,i为每个单词的index
+}
+int ans = 0;
+for(Trie node: nodes.keySet()){//遍历所有节点
+    if(node.count==0){//只有字典树的叶子节点的count为0，（所有为后缀的单词不可能是叶子节点）
+        ans += words[nodes.get(node)].length()+1;//需要重新get一下count
+    }
+}
+return ans;
+```
+## LCR 066 键值映射
+MapSum mapSum = new MapSum();
+mapSum.insert("apple", 3);  
+mapSum.sum("ap");           // return 3 (apple = 3)
+mapSum.insert("app", 2);    
+mapSum.sum("ap");           // return 5 (apple + app = 3 + 2 = 5)
+                        a(3+2)括号中为val
+                            p(3+2)
+                                p(3+2)
+                              l(2)
+                           e(2)
+```java
+public void insert(String key, int val) {
+    int delta = val - map.getOrDefault(key,0);//为什么使用delta而不是直接赋值？
+                                            //为了让有相同前缀的值进行累加
+    map.put(key,val);
+    Trie node = root;
+    for(char c: key.toCharArray()){
+        if(node.children[c-'a']==null){
+            node.children[c-'a'] = new Trie();
+        }
+        node = node.children[c-'a'];
+        node.val += delta;//关键
+    }
+}
+
+public int sum(String prefix) {
+    Trie node = root;
+    for(char c :prefix.toCharArray()){
+        if(node.children[c-'a']==null){
+            return 0;
+        }
+        node = node.children[c-'a'];
+    }
+    return node.val;//直接返回当前层对应节点的值即可
+}
+```
+## LCR 111 除法求值（Floyd算法）（任意两个点的最短距离）（带权并查集）
+题干部分在图论
+### 法二 Floyd算法（用于求任意两个点的最短距离）（关键在邻接矩阵）
+![alt text](image-16.png)
+把每一个节点i都作为中间点更新D(i) Path(i)数组
+![alt text](image-17.png)
+对于查询数量很多的情形，如果为每次查询都独立搜索一次，则效率会变低，为此，我们不妨对图先做一定的预处理，随后就可以在较短的时间内回答每个查询
+本题中使用Floyd算法预先计算出任意两点之间的距离
+### 法三 带权并查集
+## Hoffman树（hoffman编码）
+编码一段字符串使得其编完的码最短（因为出现次数越多的码越短）且不出现歧义（字符都是叶子节点，c不可能出现在b的路径上（不会有包含关系），不会有前缀的发生，没有前缀就不会有歧义）
+首先统计每个字符出现的次数，再按从小到大的顺序加入树中
+最后将树左侧的边置0，右侧的边置1
+注意：编码不一定是唯一的，但是长度一定是一样的，（所有节点的 出现次数乘以到根节点的距离 之和 是一样的）
+![alt text](image-21.png)
+![alt text](image-22.png)
+## Dijkstra算法（求某一个点到其他点的最短路径）
+![alt text](image-18.png)
+## 最小生成树算法（Prim和Kruskal）无向图
+Prim（加点法）：随机选一个初始点，选择值最小的边，并将相连的点加入树中。每次选择当前已选择的树中与其他未选择的节点的边的最小值，加入边相连的节点
+![alt text](image-20.png)
+Kruskal（加边法）：按从小到大的顺序将边加入树中，加入时需要判断加入该边前，边的两个节点是否已经属于一个连通分量，如果已经连着，那么不应该加该边（加n-1条边后结束，n为节点树）
+![alt text](image-19.png)
+## A*算法
+## 并查集
+## LCR 158 库存管理Ⅱ（摩尔投票）
+返回库存表中数量大于stock.length/2的商品id
+摩尔投票法找的不是众数，而是占一半以上的数
+输入: stock = [6, 1, 3, 1, 1, 1]
+输出: 1
+![alt text](image-28.png)
+```java
+int x=0,votes =0;
+for(int num:stock){
+    if(votes==0)x=num;
+    if(num==x){//遇到不相同的就-1，如果是超过半数的数，总数肯定大于被减的次数
+        votes += 1;
+    }else{
+        votes -= 1;
+    }
+}
+return x;
+```
+还有一种写法，对数组排序，中点一定为众数
+hashmap不再赘述
+# 优先队列自定义
+```java
+使用
+PriorityQueueImpl<Integer> pq = new PriorityQueueImpl<>(Integer::compare);
+PriorityQueueImpl<Integer> pq = new PriorityQueueImpl<>((o1,o2)->o2-o1);
+PriorityQueueImpl<Integer> pq = new PriorityQueueImpl<>(new Comparator<Interger>(){
+    @Override
+    public int compare(Integer i1,Integer i2){
+        return i2-i1;
+    }
+});
+```
+
 # 回溯
 ## LCR 079 子集
 选或不选
@@ -246,6 +1782,45 @@ private int InvalidOrValue(int i, int j){//注意长度为1时 i=j
         return -1;
     }
     return res;
+}
+```
+## LCR 157 套餐内商品的排列顺序
+与全排列Ⅱ几乎完全一致（与全排列的区别是需要去掉重复），只需要在onPath条件判断时加上重复即可
+```java
+List<String> ans;
+char[] path;
+boolean[] onPath;
+int n;
+public String[] goodsOrder(String goods) {
+    //A n n 种排列
+    char[] arr = goods.toCharArray();
+    Arrays.sort(arr);
+    String newgoods = new String(arr);
+    n = newgoods.length();
+    ans = new ArrayList();
+    path = new char[n];
+    onPath = new boolean[n];
+    dfs(0,newgoods);
+    int size = ans.size();
+    String[] ret = new String[size];
+    for(int i=0;i<size;i++){
+        ret[i] = ans.get(i);
+    }
+    return ret;
+}
+private void dfs(int i,String goods){
+    if(i==n){
+        ans.add(new String(path));
+        return;
+    }
+    for(int j=0;j<n;j++){
+        if(!onPath[j] && !(j>0 && !onPath[j-1] && goods.charAt(j-1)==goods.charAt(j))){
+            onPath[j]=true;
+            path[i] = goods.charAt(j);
+            dfs(i+1,goods);
+            onPath[j]=false;
+        }
+    }
 }
 ```
 # 动态规划
@@ -701,57 +2276,63 @@ public boolean articleMatch(String s, String p) {
     return dp[m-1][n-1];
 }
 ```
-# 特定知识
-## LCR 138 有效数字（有限状态自动机）
-首先定义出9种状态
-    0开始的空格
-    1幂符号前的正负号
-    2小数点前的数字
-    3小数点、小数点后的数字
-    4当小数点前为空格时，小数点、小数点后的数字
-    5幂符号
-    6幂符号后的正负号
-    7幂符号后的数字
-    8结尾的空格
-合法的结束状态：2，3，7，8
-![alt text](image-3.png)
-一种状态可以根据某输入转换到另外一个状态
-如
+## LCR 162 数字1的个数
 ```java
-new HashMap<>() {{ put(' ', 0); put('s', 1); put('d', 2); put('.', 4); }},
-当输入为' '时，跳到状态0
-当输入为's'时，跳到状态1
-当输入为'd'时，跳到状态2
-当输入为'.'时，跳到状态4
-```
-
-
-```java
-public boolean validNumber(String s) {
-    Map[] states = {
-        new HashMap<>() {{ put(' ', 0); put('s', 1); put('d', 2); put('.', 4); }}, // 0.
-        new HashMap<>() {{ put('d', 2); put('.', 4); }},                           // 1.
-        new HashMap<>() {{ put('d', 2); put('.', 3); put('e', 5); put(' ', 8); }}, // 2.
-        new HashMap<>() {{ put('d', 3); put('e', 5); put(' ', 8); }},              // 3.
-        new HashMap<>() {{ put('d', 3); }},                                        // 4.
-        new HashMap<>() {{ put('s', 6); put('d', 7); }},                           // 5.
-        new HashMap<>() {{ put('d', 7); }},                                        // 6.
-        new HashMap<>() {{ put('d', 7); put(' ', 8); }},                           // 7.
-        new HashMap<>() {{ put(' ', 8); }}                                         // 8.
-    };
-    int p = 0;
-    char t;
-    for(char c : s.toCharArray()) {
-        if(c >= '0' && c <= '9') t = 'd';
-        else if(c == '+' || c == '-') t = 's';
-        else if(c == 'e' || c == 'E') t = 'e';
-        else if(c == '.' || c == ' ') t = c;
-        else t = '?';
-        if(!states[p].containsKey(t)) return false;
-        p = (int)states[p].get(t);//states[p].get(t)表示从一种状态转换到另一种状态
+public int digitOneInNumber(int num) {
+    // int[] f = new int[num+1];//f[i]表示小于等于i的非负整数中数字1出现的个数
+    // f[0]=0;
+    // for(int i=1;i<=num;i++){
+    //     f[i] = f[i-1] + one_self(i);
+    // }
+    // return f[num];
+    
+    //上述代码第一次超出内存限制，需要改造
+    if(num==0)return 0;
+    int curr = 0;//f[0]=0
+    for(int i=1;i<=num;i++){
+        curr += one_self(i);
     }
-    return p == 2 || p == 3 || p == 7 || p == 8;
+    return curr;
+    
 }
+private int one_self(int i){
+    int count =0;
+    while(i!=0){
+        if(i%10==1)count++;
+        i/=10;
+    }
+    return count;
+}
+//上述代码第二次超出内存限制，仍需要改造
+```
+归结原因是计算某个数字是1的时间太久了。其实这题考察的dp不是前一个和后一个的关系，而是给定的n这个数，所有小于等于他的各个数位1出现的次数之和
+举例n=2304
+1. 所有小于等于2304的正整数中，个位出现1的次数.
+2. 所有小于等于2304的正整数中，十位出现1的次数.
+3. 所有小于等于2304的正整数中，百位出现1的次数.
+4. 所有小于等于2304的正整数中，千位出现1的次数.
+动态规划的是1 2 3 4之间的关系
+
+以 n=1234567 为例，我们需要统计「百位」上数字 1 出现的次数。我们知道，对于从 000 开始每 100010001000 个数，「百位」上的数字 1 都会出现 100 次，即数的最后三位每 1000 个数都呈现 [000,999] 的循环，其中的 [100,199] 在「百位」上的数字为 1，共有 100 个。
+n 拥有 1234 个这样的循环，每个循环「百位」上都出现了 100 次 1，这样就一共出现了 1234×1001234  次 1。如果使用公式表示，那么这部分出现的 1 的次数为：
+[n/1000] * 100
+对于剩余不在完整的循环中的部分，最后三位为 [000,567]，其中 567 可以用 n mod 1000 表示
+0~100 百位不会出现1     100<=n<200  百位上出现1的范围为[100,n]，所以出现了n-100+1次1        200~百位上出现了全部100次1
+于是百位上1的出现次数为min(max(n-100+1,0),100)
+此时，我们就得到了[0,n]中百位上数字1出现 的次数为[n/1000]*100 + min(max((n mod 1000) -100 +1,0),100)
+归纳为其他数位k=0,1,2分别表示个位 十位 百位
+[n/10^(k+1)]*10^k+ min(max((n mod 10^(k+1))-10^k + 1,0),10^k)
+```java
+// mulk 表示 10^k
+// 在下面的代码中，可以发现 k 并没有被直接使用到（都是使用 10^k）
+// 但为了让代码看起来更加直观，这里保留了 k
+long mulk = 1;
+int ans = 0;
+for (int k = 0; n >= mulk; ++k) {
+    ans += (n / (mulk * 10)) * mulk + Math.min(Math.max(n % (mulk * 10) - mulk + 1, 0), mulk);
+    mulk *= 10;
+}
+return ans;
 ```
 
 # 图论 
@@ -828,7 +2409,7 @@ public void dfs(int node,int c,int[][] graph){
     }
 }
 ```
-## LCR 107 01矩阵
+## LCR 107 01矩阵（广度优先搜索）
 ```java
 static int[][] dirs = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 
@@ -865,7 +2446,625 @@ public int[][] updateMatrix(int[][] matrix) {
     return dist;
 }
 ```
+## LCR 108 单词接龙（广度优先搜索）
+最短转换序列的长度，看到最短首先想到的是广度优先搜索，想到广度优先搜索自然而然的就能想到图
+每个单词抽象为点，相差为一个字母的用一条双向边连起来
+还有另一种双向广度优先搜索的方法。一边从beginWord开始，另一边从endWord开始。当发现某一时刻两边都访问过同一顶点时就停止，它可以可观地减少搜索空间大小。（未实现）
+![alt text](image-14.png)
+```java
+Map<String,Integer> wordId = new HashMap();//以当前插入图中的是第几个节点Integer来唯一索引String
+List<List<Integer>> edge = new ArrayList<List<Integer>>();//edge.get(唯一索引)的所有元素，为该唯一索引对应的节点所有连接的边
+int nodeNum = 0;
+public int ladderLength(String beginWord, String endWord, List<String> wordList) {
+    //依据朴素的思路，我们可以枚举每一对单词的组合，判断它们是否恰好相差一个字符，以判断这两个单词对应的节点是否能够相连。
+    //但是这样效率太低，我们可以优化建图(使用虚拟节点*)
+    for(String word : wordList){//建图
+        addEdge(word);
+    }
+    addEdge(beginWord);
+    if (!wordId.containsKey(endWord)) {//剪枝，如果结果不在图中直接返回0
+        return 0;
+    }
+    int[] dis = new int[nodeNum];
+    Arrays.fill(dis, Integer.MAX_VALUE);
+    int beginId = wordId.get(beginWord), endId = wordId.get(endWord);
+    dis[beginId] = 0;
+
+    Queue<Integer> que = new LinkedList<Integer>();
+    que.offer(beginId);
+    while (!que.isEmpty()) {
+        int x = que.poll();//取出所有的相邻节点，第一次取出的都是虚拟节点，第二次取出的是真实节点
+        if (x == endId) {
+            return dis[endId] / 2 + 1;//需要除以2，因为有虚拟节点的存在
+        }
+        for (int it : edge.get(x)) {
+            if (dis[it] == Integer.MAX_VALUE) {
+                dis[it] = dis[x] + 1;
+                que.offer(it);
+            }
+        }
+    }
+    return 0;
+}
+public void addEdge(String word){
+    addWord(word);
+    int id1 = wordId.get(word);
+    char[] array = word.toCharArray();
+    int length = array.length;
+    for(int i=0;i<length;i++){//对于单词 hit，我们创建三个虚拟节点 *it、h*t、hi*，并让 hit 向这三个虚拟节点分别连一条边
+        char tmp = array[i];
+        array[i] = '*';
+        String newWord = new String(array);
+        addWord(newWord);
+        int id2 = wordId.get(newWord);
+        edge.get(id1).add(id2);//id1:hit   id2: *it、h*t、hi*. 如果一个单词能够转化为 hit，那么该单词必然会连接到这三个虚拟节点之一
+        edge.get(id2).add(id1);//对于每一个单词，我们枚举它连接到的虚拟节点，把该单词对应的 id 与这些虚拟节点对应的 id 相连即可
+        array[i]=tmp;//注意因为添加了虚拟节点，所以我们得到的距离为实际最短路径长度的两倍
+    }
+}
+public void addWord(String word){//对于"hot":"*ot"  "h*t"  "ho*"都会被添加进来
+    if(!wordId.containsKey(word)){
+        wordId.put(word,nodeNum++);
+        edge.add(new ArrayList<Integer>());
+    }
+}
+```
+## LCR 109 开密码锁
+输入：deadends = ["0201","0101","0102","1212","2002"], target = "0202"
+输出：6
+解释：
+可能的移动序列为 "0000" -> "1000" -> "1100" -> "1200" -> "1201" -> "1202" -> "0202"。
+注意 "0000" -> "0001" -> "0002" -> "0102" -> "0202" 这样的序列是不能解锁的，因为当拨动到 "0102" 时这个锁就会被锁定。
+```java
+public int openLock(String[] deadends, String target) {
+    if ("0000".equals(target)) {//若密码为初始的0000，直接返回
+        return 0;
+    }
+
+    Set<String> dead = new HashSet<String>();
+    for (String deadend : deadends) {
+        dead.add(deadend);
+    }
+    if (dead.contains("0000")) {//若死锁里面包含起点，直接返回
+        return -1;
+    }
+
+    int step = 0;
+    Queue<String> queue = new LinkedList<String>();
+    queue.offer("0000");
+    Set<String> seen = new HashSet<String>();
+    seen.add("0000");//以0000为起点开始bfs
+
+    while (!queue.isEmpty()) {
+        ++step;
+        int size = queue.size();
+        for (int i = 0; i < size; ++i) {
+            String status = queue.poll();//取出当前字符串
+            for (String nextStatus : get(status)) {
+                if (!seen.contains(nextStatus) && !dead.contains(nextStatus)) {
+                    if (nextStatus.equals(target)) {
+                        return step;
+                    }
+                    queue.offer(nextStatus);
+                    seen.add(nextStatus);
+                }
+            }
+        }
+    }
+
+    return -1;
+}
+
+public char numPrev(char x) {//返回上一个数字
+    return x == '0' ? '9' : (char) (x - 1);
+}
+
+public char numSucc(char x) {//返回下一个数字
+    return x == '9' ? '0' : (char) (x + 1);
+}
+
+// 枚举 status 通过一次旋转得到的数字
+public List<String> get(String status) {
+    List<String> ret = new ArrayList<String>();
+    char[] array = status.toCharArray();
+    for (int i = 0; i < 4; ++i) {
+        char num = array[i];
+        array[i] = numPrev(num);
+        ret.add(new String(array));
+        array[i] = numSucc(num);
+        ret.add(new String(array));
+        array[i] = num;
+    }
+    return ret;
+}
+```
+## LCR 110 所有可能的路径（栈+深度优先搜索/广度优先搜索）
+![alt text](image-15.png)
+输入：graph = [[4,3,1],[3,2,4],[3],[4],[]]
+输出：[[0,4],[0,3,4],[0,1,3,4],[0,1,2,3,4],[0,1,4]]
+```java
+List<List<Integer>> ans = new ArrayList();
+Deque<Integer> stack = new ArrayDeque();
+//因为是有向无环图DAG，搜索过程中不会反复遍历同一个点，因此无需判断当前点是否遍历过
+public List<List<Integer>> allPathsSourceTarget(int[][] graph) {
+    stack.offer(0);
+    dfs(graph,0,graph.length-1);//第一个和第三个参数是固定的
+    return ans;
+}
+public void dfs(int[][] graph,int x,int n){
+    if(x==n){
+        ans.add(new ArrayList<Integer>(stack));
+        return;
+    }
+    for(int y:graph[x]){//遍历所有出度
+        stack.offer(y);//栈中记录了路径
+        dfs(graph,y,n);
+        stack.pollLast();//恢复现场
+    }
+}
+```
+BFS写法（此题效率较低）
+```java
+public List<List<Integer>> allPathsSourceTarget(int[][] graph) {
+    int n = graph.length;
+    // 队列
+    ArrayDeque<List<Integer>> queue = new ArrayDeque<List<Integer>>();
+    // 起始路径 [0]
+    List<Integer> start = new ArrayList<>();
+    start.add(0);
+    queue.offer(start);
+    List<List<Integer>> ans = new ArrayList<>();
+    while (!queue.isEmpty()) {
+        List<Integer> p = queue.poll();//用来记录路径
+        Integer lastNode = p.get(p.size() - 1);//取出当前路径最后一个节点
+        // 如果路径最后一个加入的节点是n-1，说明我们找到了一条可行的路径
+        if (lastNode == n - 1) {
+            ans.add(p);
+            continue;
+        }
+        for (int next : graph[lastNode]) {
+            // 将当前路径最后一个节点的所有邻居加入到新的路径中
+            List<Integer> nextPath = new ArrayList<>(p);
+            nextPath.add(next);//相当于多个p.add(next)
+            queue.addLast(nextPath);//将来作为p被取出
+        }
+    }
+    return ans;
+}
+```
+## LCR 111 除法求值（广度优先搜索）
+给定条件，让我们求出abc的值（实际不一定需要求值，比如求a/c只需要a/b * b/c）并且返回queries中的结果
+
+输入：equations = [["a","b"],["b","c"]], values = [2.0,3.0], queries = [["a","c"],["b","a"],["a","e"],["a","a"],["x","x"]]
+输出：[6.00000,0.50000,-1.00000,1.00000,-1.00000]
+解释：
+条件：a / b = 2.0, b / c = 3.0
+问题：a / c = ?, b / a = ?, a / e = ?, a / a = ?, x / x = ?
+结果：[6.0, 0.5, -1.0, 1.0, -1.0 ]
+法一：广度优先搜索（法二Floyd算法和法三并查集在**特定知识**部分）
+建图，给定图中的一些点（变量），以及某些边的权值（两个变量的比值），试对任意两点（两个变量）求出其路径长（两个变量的比值）
+![alt text](18aa41e541084f076b3a3c11b0faf9d.png)
+```java
+class Solution {
+    public double[] calcEquation(List<List<String>> equations, double[] values, List<List<String>> queries) {
+        int nvars = 0;//记录了所有equations中出现过的节点
+        Map<String,Integer> variables = new HashMap<String,Integer>();
+
+        int n = equations.size();
+        for(int i=0;i<n;i++){//遍历equations数组
+            if(!variables.containsKey(equations.get(i).get(0))){
+                variables.put(equations.get(i).get(0),nvars++);//[a,0]  ([b,2]不会进去，因为已经存在)
+            }
+            if(!variables.containsKey(equations.get(i).get(1))){
+                variables.put(equations.get(i).get(1),nvars++);//[b,1]  [c,2]
+            }
+        }
+        List<Pair>[] edges = new List[nvars];
+        for(int i=0;i<nvars;i++){
+            edges[i] = new ArrayList<Pair>();
+        }
+        for(int i=0;i<n;i++){
+            int va = variables.get(equations.get(i).get(0)),vb = variables.get(equations.get(i).get(1));//va vb表示边的两个节点
+            edges[va].add(new Pair(vb,values[i]));//edges[va]中包含了va这个节点所有的相邻节点信息(包括另一个节点的值和他俩的商)
+            edges[vb].add(new Pair(va,1.0 / values[i]));//表示图是双向的，即无向图，需要判断是否访问过
+        }
+        int queriesCount = queries.size();
+        double[] ret = new double[queriesCount];
+        for(int i =0;i<queriesCount;i++){
+            List<String> query = queries.get(i);
+            double result = -1.0;
+            if(variables.containsKey(query.get(0)) && variables.containsKey(query.get(1))){//如果当前query的两节点都在图中有记录
+                int ia = variables.get(query.get(0)),ib = variables.get(query.get(1));//取到ia,ib两节点的值
+                if(ia==ib){//必须两值都在图中才返回1，如果是不在图中的任意数x，返回的是-1
+                    result=1.0;
+                }else{
+                    Queue<Integer> points = new ArrayDeque();
+                    points.offer(ia);//以ia为起点向ib终点广度优先搜索
+                    double[] ratios = new double[nvars];
+                    Arrays.fill(ratios,-1.0);//先赋值为-1，表示无法确定的答案，也表示没有访问过
+                    ratios[ia] = 1.0;
+
+                    while(!points.isEmpty() && ratios[ib] <0){
+                        int x = points.poll();
+                        for(Pair pair: edges[x]){
+                            int y = pair.index;
+                            double val = pair.value;
+                            if(ratios[y]<0){//等同于没有访问过
+                                ratios[y] = ratios[x]*val;//x为当前节点，y为x的所有相邻节点
+                                points.offer(y);
+                            }
+                        }
+                    }
+                    result = ratios[ib];//若能到达ib，则ib的值一定被更新，若不能到达，则返回-1
+                }
+            }
+            ret[i] = result;
+        }
+        return ret;
+    }
+}
+class Pair {
+    int index;
+    double value;
+
+    Pair(int index,double value){
+        this.index = index;
+        this.value = value;
+    }
+}
+```
+## LCR 112 矩阵中的最长递增路径（记忆化DFS）
+![alt text](image-23.png)
+将矩阵看成一个有向图，每个单元格对应图中的一个节点，如果相邻的两个单元格的值不相等，则在相邻的两个单元格之间存在一条从较小值指向较大值的有向边。问题转化成在有向图中寻找最长路径
+```java
+public int[][] dirs = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+public int rows, columns;
+
+public int longestIncreasingPath(int[][] matrix) {
+    if (matrix == null || matrix.length == 0 || matrix[0].length == 0) {
+        return 0;
+    }
+    rows = matrix.length;
+    columns = matrix[0].length;
+    int[][] memo = new int[rows][columns];//若memo[i][j]为0，表示没访问过
+                                        //若memo[i][j]不为0，表示已经计算过，可以直接取，相当于缓存
+                                        //若不为0，表示的是以i，j为起点可得到的最长递增路径的长度
+    int ans = 0;
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < columns; ++j) {
+            ans = Math.max(ans, dfs(matrix, i, j, memo));//如果使用朴素深度优先搜索，时间复杂度是指数级，会超出时间限制
+        }
+    }
+    return ans;
+}
+//朴素深度优先搜索的时间复杂度过高的原因是进行了大量的重复计算，同一个单元格会被访问多次，每次访问都要重新计算。
+//由于同一个单元格对应的最长递增路径的长度是固定不变的，因此可以使用记忆化的方法进行优化。
+//用矩阵 memo 作为缓存矩阵，已经计算过的单元格的结果存储到缓存矩阵中。
+public int dfs(int[][] matrix, int row, int column, int[][] memo) {
+    if (memo[row][column] != 0) {
+        return memo[row][column];
+    }
+    ++memo[row][column];
+    for (int[] dir : dirs) {
+        int newRow = row + dir[0], newColumn = column + dir[1];
+        if (newRow >= 0 && newRow < rows && newColumn >= 0 && newColumn < columns && matrix[newRow][newColumn] > matrix[row][column]) {
+            memo[row][column] = Math.max(memo[row][column], dfs(matrix, newRow, newColumn, memo) + 1);
+        }
+    }
+    return memo[row][column];
+}
+```
+## LCR 113 课程表Ⅱ（经典BFS 入度）
+```java
+public int[] findOrder(int numCourses, int[][] prerequisites) {
+    List<List<Integer>> edges = new ArrayList();
+    List<Integer> path = new ArrayList();
+    int[] indeg = new int[numCourses];
+    for(int i=0;i<numCourses;i++)
+        edges.add(new ArrayList<Integer>());
+    for(int[] edge:prerequisites){
+        edges.get(edge[1]).add(edge[0]);
+        ++indeg[edge[0]];
+    }
+    Deque<Integer> queue = new ArrayDeque();
+    //将所有入度为0的节点放入队列中
+    for(int i=0;i<numCourses;++i){
+        if(indeg[i]==0){
+            queue.offer(i);
+        }
+    }
+    while(!queue.isEmpty()){
+        int cur = queue.poll();
+        path.add(cur);
+        for(int node:edges.get(cur)){
+            --indeg[node];
+            //如果相邻节点node的入度为0，就可以选v对应的课程了
+            if(indeg[node]==0){
+                queue.offer(node);
+            }
+        }
+    }
+    int[] res = path.stream().mapToInt(Integer::intValue).toArray();
+    return path.size()==numCourses ? res : new int[0];
+}
+```
+## LCR 114 火星字典
+words已按火星字典序排列，输出一种可能的字典，若不存再返回空
+输入：words = ["wrt","wrf","er","ett","rftt"]
+输出："wertf"
+"wrt","wrf"看出t在f前面
+"er","ett"看出r在t前面
+"wrf","er"看出w在e前面
+"ett","rftt"看出e在r前面
+外星文字典中的字母和字母顺序可以看成有向图，字典顺序即为所有字母的一种排列，满足每一条有向边的起点字母和终点字母的顺序都和这两个字母在排列中的顺序相同，该排列即为有向图的拓扑排序。
+
+只有当有向图中无环时，才有拓扑排序，且拓扑排序可能不止一种
+
+两种非法情况：
+存在由至少2个字母组成的环  words=["a","b","a"]
+相邻两个单词满足后面的单词是前面的单词的前缀，且后面的单词的长度小于前面的单词的长度   words=["ab","a"]
+![alt text](image-24.png)
+```java
+Map<Character,List<Character>> edges = new HashMap();
+Map<Character,Integer> indegrees = new HashMap();
+boolean valid = true;
+public String alienOrder(String[] words) {
+    int length = words.length;
+    for(String word: words){
+        int wordLength = word.length();
+        for(int j=0;j<wordLength;j++){
+            char c = word.charAt(j);
+            edges.putIfAbsent(c,new ArrayList<Character>());
+        }
+    }
+    for(int i=1;i<length && valid;i++){
+        addEdge(words[i-1],words[i]);
+    }
+    if(!valid)return "";
+    Deque<Character> queue = new ArrayDeque();
+    Set<Character> letterSet = edges.keySet();
+    for(char u: letterSet){
+        if(!indegrees.containsKey(u)){
+            queue.offer(u);
+        }
+    }
+    StringBuffer order = new StringBuffer();
+    while(!queue.isEmpty()){
+        char u = queue.poll();
+        order.append(u);
+        List<Character> adjacent = edges.get(u);
+        for(char v:adjacent){
+            indegrees.put(v,indegrees.get(v)-1);
+            if(indegrees.get(v)==0){
+                queue.offer(v);
+            }
+        }
+    }
+    return order.length() ==edges.size() ? order.toString() : "";
+
+}
+public void addEdge(String before,String after){
+    int length1 = before.length(),length2 = after.length();
+    int length = Math.min(length1,length2);
+    int index = 0;
+    while(index<length){
+        char c1 = before.charAt(index),c2 = after.charAt(index);
+        if(c1!=c2){
+            edges.get(c1).add(c2);//若不相同，根据字典序，前面的比后面的大，所以c1指向c2
+            indegrees.put(c2,indegrees.getOrDefault(c2,0)+1);//c2的入度加1
+            break;
+        }
+        index++;
+    }
+    if(index==length && length1>length2){
+        valid=false;
+    }
+}
+```
+## LCR 115 序列重建(BFS)
+我的思路是建图完毕后，存在超过1个出度不为0的节点则超序列不唯一（好像这种想法是错的）
+
+唯一的意思是每次只有一个入度为0的节点被选取（正确的）
+
+每一轮拓扑排序时，队列中的元素个数表示可以作为超序列下一个数字的元素个数，根据队列中的元素个数，执行如下操作。
+如果队列中的元素个数大于 1，则超序列的下一个数字不唯一，因此 nums 不是唯一的最短超序列，返回 false。
+如果队列中的元素个数等于 1，则超序列的下一个数字是队列中唯一的数字。将该数字从队列中取出，将该数字指向的每个数字的入度减 1，并将入度变成 0 的数字添加到队列中。
+
+证明：如果拓扑排序的过程中，有一轮的队列中的元素个数大于 1，则由于超序列的下一个数字有多种可能，因此 nums 不是唯一的最短超序列，这一点颇为直观。
+当队列为空时，完整的拓扑排序结束，nums 是唯一的最短超序列。
+```java
+int n = nums.length;
+int[] indeg = new int[n+1];
+List<Set<Integer>> graph = new ArrayList();
+for(int i=0;i<n;i++){
+    graph.add(new HashSet<Integer>());
+}
+for(int[] edge:sequences){//对于sequences=[[1,2],[1,3][1,2,3]]来说
+    for(int i=0;i<edge.length-1;i++){
+        int from=edge[i],to=edge[i+1];//第一轮from=1 to=2 第二轮from=1 to=3 第三轮from=1 to=2; from=2 to=3
+        if(graph.get(from-1).add(to)){
+            ++indeg[to];
+        }
+    }
+}
+Deque<Integer> queue = new ArrayDeque();
+for(int i=1;i<=n;i++){
+    if(indeg[i]==0){
+        queue.offer(i);//indeg[1]=0 indeg[2]=1 indeg[3]=2
+    }//graph.get(0)
+}
+while(!queue.isEmpty()){
+    if(queue.size()>1){//需要保证每一次在队列中的数都唯一，以保证超序列唯一
+        return false;
+    }
+    int num = queue.poll();
+    Set<Integer> set = graph.get(num-1);
+    for(int next :set){//第一轮set包含2 和 3；第二轮set包含 3；没有第三轮了
+        indeg[next]--;
+        if(indeg[next]==0){
+            queue.offer(next);
+        }
+    }
+}
+return true;
+```
+## LCR 116 省份数量
+![alt text](image-25.png)
+输入：isConnected = [[1,1,0],[1,1,0],[0,0,1]]
+输出：2
+题目给出的条件已经可以表示一个有向图（并且必定互联），直接bfs即可，因为是有向图并且存在互联，所以需要使用visited来记录
+```java
+int cities = isConnected.length;
+boolean[] visited = new boolean[cities];
+int provinces=0;
+Queue<Integer> queue = new ArrayDeque();
+for(int i=0;i<cities;i++){
+    if(!visited[i]){
+        queue.offer(i);
+        while(!queue.isEmpty()){
+            int j = queue.poll();
+            visited[j] = true;
+            for(int k=0;k<cities;k++){
+                if(isConnected[j][k]==1&&!visited[k]){
+                    queue.offer(k);
+                }
+            }
+        }
+        provinces++;
+    }
+}
+return provinces;
+```
+## LCR 117 相似字符串组（并查集）无向图
+并查集写法
+```java
+for(int i=0;i<n;i++){//注意i<=n 视题目而定
+    f[i]=i;
+}
+//union是路径压缩过程
+public int find(int x){
+    if(f[x]==x){
+        return x;
+    }
+    // return find(f[x]);没有路径压缩
+    f[x] = find(f[x]);
+    return f[x];//有路径压缩
+}
+//或
+public int find(int x){
+    // return f[x]==x ? x : find(f[x]);没有路径压缩
+    return f[x]==x ? x : f[x] = find(f[x]);有路径压缩
+}
+```
+如果交换字符串 X 中的两个不同位置的字母，使得它和字符串 Y 相等，那么称 X 和 Y 两个字符串相似
+关联组：要确定一个单词在组中，只需要这个词和该组中至少一个单词相似
+
+首先需要明白，为什么字母异位词不一定属于一个相似字符串组，因为交换是同时操作两个字符
+使用for遍历两字符串相同位置的字符，不相同的次数一定是偶数。若为奇数，则一定不属于一个字符串组
+比如tars和arts，不相同的字符数为4，而tars和arts不相同的字符数为3
+
+我们把每一个字符串看作点，字符串之间是否相似看作边，那么可以发现本题询问的是给定的图中有多少连通分量。于是可以想到使用并查集维护节点间的连通性。
+```java
+int[] f;
+public int numSimilarGroups(String[] strs) {
+    int n = strs.length;
+    f = new int[n];
+    for(int i=0;i<n;i++){
+        f[i]=i;
+    }
+    for(int i=0;i<n;i++){
+        for(int j=i+1;j<n;j++){
+            int fi = find(i),fj=find(j);//找到i和j的终极父亲
+            if(fi==fj){//
+                continue;
+            }
+            if(check(strs[i],strs[j])){//判断两字符串是否相似
+                f[fi]=fj;//若相似，则fi可以通过并查集f找到父亲fj            Union()过程 路径压缩
+                //fi与fj相似f[fi]=fj，若fj与fk相似f[fj]=fk，则fi应该与fk属于同一个连通分量
+                //即find[fi]==find[fk],find[fi]首先返回find[fj],find[fj]返回find[fk]
+            }
+        }
+    }
+    int ret = 0;
+    for(int i=0;i<n;i++){
+        if(f[i]==i){//找有几个终极父亲节点即为连通分量个数
+            ret++;
+        }
+    }
+    return ret;
+}
+public int find(int x){
+    if(f[x]==x){
+        return x;
+    }
+    f[x] = find(f[x])
+    return f[x];
+}
+public boolean check(String a,String b){
+    int num = 0;
+    int len = a.length();
+    for(int i=0;i<len;i++){
+        if(a.charAt(i)!=b.charAt(i)){
+            num++;//由于保证了strs中都是字母异位词，通过交换得到的相似字符串num一定为2
+            if(num>2){
+                return false;
+            }
+        }
+    }
+    return true;
+}
+```
+## LCR 冗余连接（多余的边）（并查集 无向图）
+初始时，每个节点都属于不同的连通分量。遍历每一条边，判断这条边连接的两个顶点是否属于相同的连通分量。
+如果两个顶点属于不同的连通分量，则说明在遍历到当前的边之前，这两个顶点之间不连通，因此当前的边不会导致环出现，合并这两个顶点的连通分量。
+（关键）如果两个顶点属于相同的连通分量，则说明在遍历到当前的边之前，这两个顶点之间已经连通，因此当前的边导致环出现，为多余的边，将当前的边作为答案返回。
+
+问题：题目要求是返回最后那条边，题解看着好像是找到了就返回，是不是有问题啊？
+
+因为这道题就给了n条边，n个节点的树是n - 1条边，等于说只有一条边是多余的
+```java
+public int[] f;
+public int[] findRedundantConnection(int[][] edges) {
+    //删除后连通分量仍为1
+    int n = edges.length;
+    f =new int[n+1];
+    for(int i=0;i<=n;i++)
+        f[i]=i;
+    for(int[] edge:edges){//根据题意edge[0]比edge[1]小，所以find(edge[1])=edge[0]
+        int fi = find(edge[0]),fj = find(edge[1]);
+        if(fi!=fj){
+            f[fj]=fi;
+        }else{
+            return edge;
+        }
+    }
+    return new int[]{0,0};
+}
+public int find(int x){
+    return f[x]==x ? x : (f[x] = find(f[x]));
+}
+```
 # 聪明题
+## LCR 119 最长连续序列 
+```java
+Set<Integer> num_set = new HashSet<Integer>();
+for(int num:nums){
+    num_set.add(num);
+}
+int longestStreak = 0;
+for(int num:num_set){
+    if(!num_set.contains(num-1)){
+        int currentNum = num;
+        int currentStreak = 1;
+        while(num_set.contains(currentNum+1)){
+            currentNum+=1;
+            currentStreak+=1;
+        }
+        longestStreak=Math.max(longestStreak,currentStreak);
+    }
+}
+return longestStreak;
+```
 ## LCR 120 寻找文件副本
 可以利用好0 ≤ documents[i] ≤ n-1这个条件
 ```java
@@ -1002,23 +3201,351 @@ while(b > 0) {
 }
 return res;
 ```
-# 双指针
-## LCR 139 训练计划Ⅰ（将奇数放前面，偶数放后面）
-1.指针left从左向右寻找偶数
-2.指针right从右向左寻找技术
-3.将偶数actions[i]和技术actions[j]交换
+## LCR 163 找到第k位数字
+输入：k = 12
+输出：1
+解释：第 12 位数字在序列 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, ... 里是 1 ，它是 11 的一部分。
 ```java
-int left =0,right= actions.length-1;
-while(left<right){
-    while(left<right && (actions[left]&1)==1)left++;
-    while(left<right && (actions[right]&1)==0)right--;
-    int tmp = actions[left];
-    actions[left] = actions[right];
-    actions[right] = tmp;
+//个位数0~9  k_1=0+10*1
+//十位数10~99  k_2=k_1+90*2
+//百位数100~999 k_3=k_2+900*3
+//千位数1000~9999 k_4=k_3+9000*4    base+=10^exp * 9 * exp
+//首先找到在哪个区间
+if(k<=9)return k;
+List<Long> intervals = new ArrayList();
+intervals.add(0L);
+long base = 10;
+int exp=1;
+while(k>=base){
+    intervals.add((long)base);
+    exp++;
+    base+=exp*Math.pow(10,exp-1)*9;
 }
-return actions;
+//程序运行到此处
+//k=12,intervals=[10],base=190,exp=2
+long start = intervals.get(intervals.size()-1);//start=10
+long offset = k-start;//offset=2
+long num = offset/exp + 1;//第几个数字 据题意应为11中的前一个数字，而11是第2个数字  1 0 | 1 1 | 1 2 | 1 3
+long math_num = (int)Math.pow(10,exp-1) + num - 1;//如何根据10（区间的左限10,100,1000） 第2个数字，拿到11？
+                            //注意base是[10,190,2890]
+int num_no = (int)offset%exp;
+String num_str = String.valueOf(math_num);
+//取math_num的第num_no位
+return num_str.charAt(num_no)-'0';
 ```
 # 树
+## LCR 043 完全二叉树插入器
+只有倒数第二层最右侧的若干个节点以及最后一层的全部节点可以再添加子节点，用candidate数组存储
+```java
+Queue<TreeNode> candidate;
+TreeNode root;
+
+public CBTInserter(TreeNode root) {
+    this.candidate = new ArrayDeque<TreeNode>();
+    this.root = root;
+
+    Queue<TreeNode> queue = new ArrayDeque<TreeNode>();
+    queue.offer(root);
+
+    while (!queue.isEmpty()) {
+        TreeNode node = queue.poll();
+        if (node.left != null) {
+            queue.offer(node.left);
+        }
+        if (node.right != null) {
+            queue.offer(node.right);
+        }
+        if (!(node.left != null && node.right != null)) {//若node不具有2个子节点，则进入candidate
+            candidate.offer(node);
+        }
+    }
+}
+
+public int insert(int val) {
+    TreeNode child = new TreeNode(val);
+    TreeNode node = candidate.peek();
+    int ret = node.val;
+    if (node.left == null) {
+        node.left = child;
+    } else {
+        node.right = child;
+        candidate.poll();//若candidate的左节点为空，那么在其右节点插入，并且弹出，因为他不再是candidate
+    }
+    candidate.offer(child);//将candidate新插入的右节点入candidate数组
+    return ret;
+}
+
+public TreeNode get_root() {
+    return root;
+}
+```
+## LCR 047 二叉树剪枝
+还是树形dp简单
+```java
+if (root == null) {
+    return null;
+}
+root.left = pruneTree(root.left);
+root.right = pruneTree(root.right);
+if (root.left == null && root.right == null && root.val == 0) {
+    return null;
+}
+return root;
+```
+最需要注意的一点是递推时栈区变量和堆区变量的区别
+```java
+if(root ==null){
+    return null;
+}
+Deque<TreeNode> stack = new ArrayDeque();
+TreeNode curNode = root;
+TreeNode prevNode = null;
+while(curNode != null || !stack.isEmpty()){
+    while(curNode != null){//先遍历到最左节点，并将路径存起来
+        stack.offerLast(curNode);//offerLast==offer==add==addLast
+        curNode = curNode.left;
+    }
+    curNode = stack.peekLast();
+    if(curNode.right != null && curNode.right != prevNode) {
+        curNode = curNode.right;
+    } else {//curNode的右节点为空
+        curNode = stack.pollLast();//pollLast==removeLast(peekLast的取出版)
+        if(curNode.val == 0 && curNode.left == null && curNode.right == null){
+            //curNode为栈区变量，直接修改curNode对堆区的树没有影响，需要找到他的上一个节点
+            //curNode = null;
+
+            if(!stack.isEmpty()){
+                //tmpNode为栈区变量,tmpNode.left和tmpNode.right为堆区变量，修改left和right会修改树的节点
+                TreeNode tmpNode = stack.peekLast();
+                if(tmpNode.left == curNode){
+                    tmpNode.left = null;
+                } else if(tmpNode.right == curNode){
+                    tmpNode.right = null;
+                }
+            } else {
+                return null;
+            }
+        }
+        prevNode = curNode;
+        curNode = null;
+    }
+}
+return root;
+```
+## LCR 048 二叉树的序列化与反序列化
+```java
+// Encodes a tree to a single string.
+public String serialize(TreeNode root) {
+    return rserialize(root,"");
+}
+
+// Decodes your encoded data to tree.
+public TreeNode deserialize(String data) {
+    String[] dataArray = data.split(",");
+    Deque<String> dataList = new ArrayDeque<String>(Arrays.asList(dataArray));
+    return rdeserialize(dataList);
+}
+
+public String rserialize(TreeNode root,String str){
+    if(root==null){
+        str+="None,";
+    }else{
+        str += str.valueOf(root.val)+",";//先序
+        str = rserialize(root.left,str);
+        str = rserialize(root.right,str);
+    }
+    return str;
+}
+
+public TreeNode rdeserialize(Deque<String> dataList){
+    if(dataList.peek().equals("None")){
+        dataList.poll();
+        return null;
+    }
+    TreeNode root = new TreeNode(Integer.valueOf(dataList.peek()));//取出第一个，即根节点
+    //dataList.remove(0);
+    dataList.poll();//先序
+    root.left = rdeserialize(dataList);
+    root.right = rdeserialize(dataList);
+    return root;
+}
+```
+## LCR 050 路径总和Ⅲ
+求节点值之和等于targetSum的路径的数目
+```java
+public int pathSum(TreeNode root, int targetSum) {
+    Map<Long, Integer> prefix = new HashMap<Long, Integer>();
+    prefix.put(0L, 1);
+    return dfs(root, prefix, 0, targetSum);
+}
+
+public int dfs(TreeNode root, Map<Long, Integer> prefix, long curr, int targetSum) {
+    if (root == null) {
+        return 0;
+    }
+
+    int ret = 0;
+    curr += root.val;//curr：当前节点到根节点的前缀和（包含当前节点）
+
+    ret = prefix.getOrDefault(curr - targetSum, 0);//curr-targetSum：搜索一下之前保存的路径和里面有没有相等的 若有就是n条路径
+                                                    //其中n为hashmap中curr-targetSum对应的value
+    prefix.put(curr, prefix.getOrDefault(curr, 0) + 1);//根据当前节点做更新，若没有则为1，若有则为curr对应的value+1
+    ret += dfs(root.left, prefix, curr, targetSum);
+    ret += dfs(root.right, prefix, curr, targetSum);
+    prefix.put(curr, prefix.get(curr) - 1);//恢复现场
+    return ret;
+}
+```
+## 543 二叉树的直径
+原问题：求最大路径长度，即以某个节点为中心，左子树和右子树的最大长度之和，
+可以递归到以左子树的根节点为中心，左子树的左子树和右子树的最大长度之和
+要注意 直径=左最大长度+右最大长度
+而递归时需要长度
+```java
+int max=-1;
+public int diameterOfBinaryTree(TreeNode root) {
+    dfs(root);
+    return max;
+}
+private int dfs(TreeNode root){
+    if(root==null)return -1;
+    int left = dfs(root.left)+1;
+    int right = dfs(root.right)+1;
+    max = Math.max(max,left+right);
+    return Math.max(left,right);
+}
+```
+## LCR 051 二叉树中的最大路径和
+```java
+int ans=Integer.MIN_VALUE;
+public int maxPathSum(TreeNode root) {
+    //讨论左子树的最大链和，和右子树的最大链和
+    dfs(root);
+    return ans;
+}
+private int dfs(TreeNode root){
+    if(root==null)return 0;
+    int left = dfs(root.left);
+    int right = dfs(root.right);
+    ans = Math.max(ans,left+right+root.val);
+    return Math.max(Math.max(left,right)+root.val,0);
+}
+```
+## LCR 052 递增顺序搜索树
+中序遍历之后生成新的树（这种方法太简单不提）
+法二：先创建一个resNode，他的第一个右节点为原树的中序遍历的第一个节点，随着回溯，不断在右节点上插入中序遍历的节点
+```java
+private TreeNode resNode;
+public TreeNode increasingBST(TreeNode root) {
+    TreeNode dummyNode = new TreeNode(-1);
+    resNode = dummyNode;
+    inorder(root);
+    return dummyNode.right;
+}
+public void inorder(TreeNode node){
+    if(node==null)return;
+    inorder(node.left);
+    //在中序遍历的过程中修改节点指向
+    resNode.right = node;
+    node.left=null;
+    resNode=node;//随着回溯，resNode在不断变长
+
+    inorder(node.right);
+}
+```
+## LCR 053 二叉搜索树中的中序后继
+利用中序遍历，并保留上一个节点
+```java
+Deque<TreeNode> stack = new ArrayDeque();
+TreeNode prev = null, curr=root;
+while(!stack.isEmpty() || curr !=null){
+    while(curr!=null){
+        stack.push(curr);
+        curr = curr.left;
+    }
+    curr = stack.pop();
+    if(prev==p)return curr;
+    prev = curr;
+    curr = curr.right;
+}
+return null;
+```
+利用二叉搜索树性质，直接找p右子树的最左节点
+如果p没有右子树，从root出发，找到第一个小于p的节点，找他的最右节点
+```java
+TreeNode successor = null;
+if (p.right != null) {
+    successor = p.right;
+    while (successor.left != null) {
+        successor = successor.left;
+    }
+    return successor;
+}
+TreeNode node = root;
+while (node != null) {
+    if (node.val > p.val) {
+        successor = node;
+        node = node.left;
+    } else {
+        node = node.right;
+    }
+}
+return successor;
+```
+## LCR 054 把二叉搜索树转换为累加树
+利用反序中序遍历可以得到单调递减的有序序列
+```java
+int sum=0;
+public TreeNode convertBST(TreeNode root) {
+    if(root!=null){
+        convertBST(root.right);
+        sum+=root.val;
+        root.val=sum;
+        convertBST(root.left);
+    }
+    return root;
+}
+```
+Morris中序反序遍历
+1.如果当前节点的右子节点为空，处理当前节点，并遍历当前节点的左子节点；
+2.如果当前节点的右子节点不为空，找到当前节点右子树的最左节点（该节点为当前节点中序遍历的前驱节点）；
+· 如果最左节点的左指针为空，将最左节点的左指针指向当前节点，遍历当前节点的右子节点；
+· 如果最左节点的左指针不为空，将最左节点的左指针重新置为空（恢复树的原状），处理当前节点，并将当前节点置为其左节点；
+3.重复步骤 1 和步骤 2，直到遍历结束。
+Morris中序正序遍历
+1.如果当前节点的左子节点为空，处理当前节点，并遍历当前节点的右子节点；
+2.如果当前节点的左子节点不为空，找到当前节点左子树的最右节点（该节点为当前节点中序遍历的前驱节点）；
+· 如果最右节点的右指针为空，将最右节点的右指针指向当前节点，遍历当前节点的右子节点；
+· 如果最右节点的右指针不为空，将最右节点的右指针重新置为空（恢复树的原状），处理当前节点，并将当前节点置为其右节点；
+3.重复步骤 1 和步骤 2，直到遍历结束。
+https://www.bilibili.com/video/BV17H4y1p7DD/?spm_id_from=333.337.search-card.all.click&vd_source=5466fdbfab4e60957fa343b3b2dbd463
+## LCR 055 二叉搜索树迭代器
+先进行一次中序遍历放入数组中，每次取数组的下一个（太简单不提）
+迭代法
+```java
+private TreeNode cur;
+private Deque<TreeNode> stack;
+
+public BSTIterator(TreeNode root) {
+    cur = root;
+    stack = new ArrayDeque();
+}
+
+public int next() {
+    while(cur != null){
+        stack.push(cur);
+        cur = cur.left;
+    }
+    cur = stack.pop();
+    int ret = cur.val;
+    cur = cur.right;
+    return ret;
+}
+
+public boolean hasNext() {
+    return cur !=null || !stack.isEmpty();
+}
+```
 ## LCR 143 子结构判断
 ```java
 public boolean isSubStructure(TreeNode A, TreeNode B) {
@@ -1040,6 +3567,94 @@ private boolean dfs(TreeNode A,TreeNode B){
     }else{
         return false;
     }
+}
+```
+## LCR 152 验证二叉搜索树的后序遍历
+```java
+public boolean verifyTreeOrder(int[] postorder) {
+    return recur(postorder,0,postorder.length-1);
+}
+private boolean recur(int[] postorder,int i ,int j){
+    if(i>=j)return true;
+    int p = i;
+    while(postorder[p]<postorder[j])p++;
+    int m=p;
+    while(postorder[p]>postorder[j])p++;
+    return p==j && recur(postorder,i,m-1) && recur(postorder,m,j-1);
+}
+```
+## LCR 153 二叉树中和为目标值的路径
+输出从根节点开始到叶节点结束所有路径
+```java
+List<List<Integer>> ans = new ArrayList();
+List<Integer> path = new ArrayList();
+public List<List<Integer>> pathTarget(TreeNode root, int target) {
+    dfs(root,target);
+    return ans;
+}
+private void dfs(TreeNode root , int target){
+    if(root ==null) return;
+    path.add(root.val);//
+    target-=root.val;
+    if(target==0&&root.left==null&&root.right==null)
+        ans.add(new ArrayList(path));
+    dfs(root.left,target);
+    dfs(root.right,target);
+    path.removeLast();//删除最后一个元素的时候使用LinkedList和ArrayList都可以，但是需要删除第一个元素的时候使用LinkedList
+                    //本题使用ArrayList比使用LinkedList少使用了许多内存，因为LinkedList需要保存前后节点的指针
+                    //但注意ArrayList是动态扩容的，数据量极大时容易造成内存浪费
+}
+```
+## LCR 154 复杂链表的复制
+![alt text](image-27.png)
+输入：head = [[3,null],[3,0],[3,null]]
+输出：[[3,null],[3,0],[3,null]]
+注意节点的值是可以重复的，因此将节点值Integer作为hashmap的key是不行的
+并且输入中的第二位，即random指向的是 下标 而不是 下标对应节点的值
+```java
+if(head==null)return null;
+Node cur = head;
+Map<Node,Node> map = new HashMap();
+//复制各节点，并建立"原节点->新节点"的Map映射
+while(cur != null){
+    map.put(cur,new Node(cur.val));
+    cur = cur.next;
+}
+cur = head;
+//构建新链表的next和random指向
+while(cur!=null){
+    map.get(cur).next = map.get(cur.next);
+    map.get(cur).random = map.get(cur.random);
+    cur = cur.next;
+}
+//返回新链表的头节点
+return map.get(head);
+```
+## LCR 155 将二叉搜索树转换为排序的双向链表
+```java
+Node pre,head;
+public Node treeToDoublyList(Node root) {
+    if(root == null)return null;
+    dfs(root);
+
+    head.left = pre;
+    pre.right = head;//进行头节点和尾节点的互相指向，这两句的顺序也是可以颠倒的
+
+    return head;
+}
+private void dfs(Node cur){
+    if(cur==null) return;
+    dfs(cur.left);
+
+    //pre用于记录双向链表中位于cur左侧的节点，即上一次迭代中的cur，当pre=null时，cur左侧没有节点，即此时cur为双向链表的头节点
+    if(pre==null)head = cur;
+    //反之，pre!=null时，cur左侧存在节点pre，需要进行pre.right=cur的操作
+    else pre.right = cur;
+
+    cur.left = pre;//pre是否为null对这句没有影响,且这句放在上面两句if else之前也是可以的。
+    
+    pre = cur;//pre指向当前的cur
+    dfs(cur.right);//全部迭代完成后，pre指向双向链表中的尾节点
 }
 ```
 # 手写排序
