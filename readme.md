@@ -108,6 +108,46 @@ for(int i=highBit;i>=0;i--){//从最高位开始枚举，因为数大不大看�
 }
 return ans;
 ```
+## LCR 177 撞色搭配
+```java
+//因为相同的数字异或为0，任何数字与0异或结果是其本身。
+//所以遍历异或整个数组最后得到的结果就是两个只出现一次的数字异或的结果：即 z = x ^ y
+int z = 0;  
+for(int i : nums) z ^= i;
+//我们根据异或的性质可以知道：z中至少有一位是1，否则x与y就是相等的。
+//我们通过一个辅助变量m来保存z中哪一位为1.（可能有多个位都为1，我们找到最低位的1即可）。
+//举个例子：z = 10 ^ 2 = 1010 ^ 0010 = 1000,第四位为1.
+//我们将m初始化为1，如果（z & m）的结果等于0说明z的最低为是0
+//我们每次将m左移一位然后跟z做与操作，直到结果不为0.
+//此时m应该等于1000，同z一样，第四位为1.
+int m = 1;
+while((z & m) == 0) m <<= 1;
+//我们遍历数组，将每个数跟m进行与操作，结果为0的作为一组，结果不为0的作为一组
+//例如对于数组：[1,2,10,4,1,4,3,3]，我们把每个数字跟1000做与操作，可以分为下面两组：
+//nums1存放结果为0的: [1, 2, 4, 1, 4, 3, 3]
+//nums2存放结果不为0的: [10] (碰巧nums2中只有一个10，如果原数组中的数字再大一些就不会这样了)
+//此时我们发现问题已经退化为数组中有一个数字只出现了一次
+//分别对nums1和nums2遍历异或就能得到我们预期的x和y
+int x = 0, y = 0;
+for(int i : nums) {
+    //这里我们是通过if...else将nums分为了两组，一边遍历一遍异或。
+    //跟我们创建俩数组nums1和nums2原理是一样的。
+    if((i & m) == 0) x ^= i;
+    else y ^= i;
+}
+return new int[]{x, y};
+```
+## LCR 190 加密运算
+不使用四则运算符 计算两数之和
+![alt text](image-36.png)
+```java
+while(dataB != 0){//当进位为0时跳出
+    int c = (dataA & dataB) << 1;//c=进位
+    dataA ^= dataB;//dataA=非进位和
+    dataB = c;//dataB=进位
+}
+return dataA;
+```
 # 双指针
 ## LCR 139 训练计划Ⅰ（将奇数放前面，偶数放后面）
 1.指针left从左向右寻找偶数
@@ -360,6 +400,66 @@ public int countSubstrings(String s) {
     return res;
 }
 ```
+## LCR 170 交易逆序对的总数(归并排序)
+![alt text](image-29.png)
+```java
+public int reversePairs(int[] record) {
+    int len = record.length;
+    if(len<2)return 0;
+    //为什么官解copy？ 实际上注释掉也没关系
+    // int[] copy = new int[len];
+    // copy = Arrays.copyOf(record,len);
+    int[] temp = new int[len];
+    return reversePairs(record,0,len-1,temp);
+}
+private int reversePairs(int[] record,int left,int right,int[] temp){
+    if(left==right)return 0;
+    int mid = left+(right-left)/2;
+    int leftPairs = reversePairs(record,left,mid,temp);//左边的交易逆序对
+    int rightPairs = reversePairs(record,mid+1,right,temp);//右边的交易逆序对
+
+    if(record[mid]<=record[mid+1]){//如果1<4则直接返回就可以，因为回溯时[0 1] [4 5]都已经是有序的，相当于左边最大的小于右边最小的
+        //      0  1  4  5
+        //      l  m m+1 r
+        //   0 1          4 5     
+        return leftPairs + rightPairs;
+    }//这里加上else把下面包起来也是可以的
+    int crossPairs = mergeAndCount(record,left,mid,right,temp);//合并两有序序列[left,mid]和[mid,right]，并计算合并产生的逆序对
+    return leftPairs+rightPairs+crossPairs;
+}
+private int mergeAndCount(int[] record,int left,int mid,int right,int[] temp){
+    for(int i=left;i<=right;i++){//复制一下原数组
+        temp[i] = record[i];
+    }
+    int i=left;//左序列[left,mid]的头指针
+    int j = mid+1;//右序列[mid+1,right]的头指针
+
+    int count = 0;
+    for(int k=left;k<=right;k++){
+        if(i==mid+1){//遍历完左序列
+            record[k]=temp[j];
+            j++;
+        }else if(j==right+1){//遍历完右序列
+            record[k]=temp[i];
+            i++;
+        }else if(temp[i]<=temp[j]){//左侧元素小于右侧，将左侧元素添加进排序队列
+            record[k]=temp[i];
+            i++;
+        }else{//temp[i]>=temp[j]左侧元素大于右侧，将右侧元素添加进排序队列
+            record[k]=temp[j];
+            j++;
+            count+=(mid-i+1);
+            //record[] 3 4 5 0 1 2
+            //temp[]   3 4 5 0 1 2
+            //         i   m j
+            //record[] 0 4 5 0 1 2
+            //         i   m   j    count+=(mid-i+1)=2-0+1=3(表明逆序对[3,0][3,1][3,2])
+        }
+    }
+    return count;
+}
+```
+
 # 链表
 ## LCR 021 删除链表的倒数第N个节点
 先得到一个领先head节点N个数的节点，再同时遍历（先走N步再一起走）
@@ -970,6 +1070,81 @@ public void addNum(int num) {
 
 public double findMedian() {
     return A.size() != B.size() ? A.peek() : (A.peek()+B.peek())/2.0;
+}
+```
+## LCR 183 望远镜中最高的海拔（同hot100 滑动窗口最大值）（单调队列）
+队列中存下标也是可以的，不过比较难以理解
+```java
+if(limit==0)return new int[0];
+int n =heights.length;
+int[] ans = new int[n-limit+1];
+Deque<Integer> q = new ArrayDeque();//单调队列，存的是下标
+for(int i=0;i<n;i++){
+    while(!q.isEmpty() && q.getLast()<heights[i]){//若队尾元素小于当前元素，队尾元素出队,这里如果队列中存的是值，
+                                                    //那么q.getLast()<height[i]，不能写成<=
+                                                    //比如heights=[-7,-8,7,5,7,1,6,0] limit=4  正确答案是[7,7,7,7,7]
+                                                    //若为<=，则答案为[7,7,7,6,6]。原因是如果将重复元素都删除不进入队列
+                                                    //那么下面==判断会把新添加的7当作旧的7删除，导致队列中没有新的7
+                                                    //如果允许重复进入队列，那么队列中会有2个7，一个旧7被删除，1个新7仍存在
+        q.removeLast();//维护q的单调性
+        //-----------------------  方向->递增
+        //   1 -> 3 -> 4 -> 5
+        //-----------------------
+        //Last              First
+    }
+    //经过上步可以保证 此处 队列是单调的
+    q.addLast(heights[i]);
+    if(i>=limit && heights[i-limit]==q.peekFirst()){//[7,2,4] limit=2 q:  ->7->  此时插入了4  4->7，7由于滑动窗口需要出列
+                                                    //判断队首是否是最老的被移出的那个元素heights[i-limit]，同时上面把<=改成<
+        q.removeFirst();//7出列
+    }
+    if(i>=limit-1){
+        ans[i-limit+1] = q.getFirst();
+    }
+}
+return ans;
+```
+## LCR 184 设计自助结算系统（单调队列）(自动装箱)
+![alt text](9c24eac03f9e61c8bb2c678a65bf649.png)
+```java
+Deque<Integer> goods;
+Deque<Integer> queue;
+public Checkout() {
+    goods = new ArrayDeque();
+    queue = new ArrayDeque();
+}
+
+public int get_max() {
+    if(queue.isEmpty())return -1;
+    else return queue.peekFirst();
+}
+
+// public void add(int value) {//写法一
+//     goods.offer(value);
+//     queue.offer(value);
+//     while(value>queue.peekFirst()){//先把value插到单调队列的尾巴上，再从头至尾 删除
+//         queue.pollFirst();
+//     }
+// }
+//上面写法错误，两种写法的区别在于
+public void add(int value){//写法二
+    goods.offer(value);
+    while(!queue.isEmpty() && value > queue.peekLast()){//先从尾至头删除，再插在尾巴上
+        queue.pollLast();
+    }
+    queue.offerLast(value);
+}
+
+public int remove() {
+    if(goods.isEmpty())return -1;
+    // if(goods.peek()==queue.peekFirst()){ //注意==是错误写法  包装类Integer在自动装箱时有缓存
+    //Integer i1 = new Integer(1);Integer i2 = new Integer(1);    i1==i2 false new的话是一定会在堆空间新建变量的
+    //Integer i1 = 1             ;Integer i2 = new Integer(1);    i1==i2 false 因为i1自动装箱了
+    //Integer i1 = 1             ;Integer i2 = 1             ;    i1==i2 true  自动装箱有缓存机制
+    if(goods.peek().equals(queue.peekFirst())){
+        queue.pollFirst();
+    }
+    return goods.poll();
 }
 ```
 # 二分查找(满足单调递增或递减特性)
@@ -2334,7 +2509,67 @@ for (int k = 0; n >= mulk; ++k) {
 }
 return ans;
 ```
-
+## LCR 165 解密数字
+数字 0-25 分别对应字母 a-z
+输入: ciphertext = 216612
+输出: 6
+解释: 216612 解密后有 6 种不同的形式，分别是 "cbggbc"，"vggbc"，"vggm"，"cbggm"，"cqggbc" 和 "cqggm" 
+```java
+String src = String.valueOf(ciphertext);
+int[] dp = new int[src.length()+1];//dp[i]表示前i个字母有多少种解密结果,只有当出现了 10~25 ，解密结果才会比之前多
+                                    //考虑第i位单独解密f(i-1)和前一位连接起来再解密f(i-2)   对f(i)的贡献
+                                    //f(i)=f(i-1)+f(i-2)[i-1>=0,10<=x<=25]
+                                    //dp[-1]=0,dp[0]=1
+dp[0]=1;
+for(int i=1;i<src.length();++i){
+    dp[i] = dp[i-1];
+    String pre = src.substring(i-1,i+1);
+    if(pre.compareTo("25")<=0 && pre.compareTo("10")>=0){
+        if(i==1){
+            dp[i]+=1;//当string第0位和第1位位于10和25之间时，很明显d[1]=2
+            continue;
+        }
+        dp[i]+=dp[i-2];
+    }
+}
+return dp[src.length()-1];
+```
+## LCR 168 丑数
+```java
+//每个丑数都可以由其他较小的丑数通过乘以 2 或 3 或 5 得到
+int a = 0,b=0,c=0;
+int[] res = new int[n];//用res[]保存所有从0开始的丑数
+res[0]=1;
+for(int i=1;i<n;i++){
+    int n2 = res[a] * 2,n3 = res[b]*3,n5=res[c]*5;
+    res[i] = Math.min(Math.min(n2,n3),n5);//res[i]为n2 n3 n5的最小值
+    if(res[i]==n2)a++;//速度为2的马跑1次
+    if(res[i]==n3)b++;//速度为3的马跑1次
+    if(res[i]==n5)c++;//速度为5的马跑1次
+                        //让最慢的马跑1次，但是不能写成if else，因为丑数会重复
+}
+return res[n-1];
+```
+## LCR 185 统计结果概率
+![alt text](image-30.png)
+因此概率 f(n−1,x) 仅与 f(n,x+1) , f(n,x+2), ... , f(n,x+6) 相关。因而，遍历 f(n−1) 中各点数和的概率，并将其相加至 f(n) 中所有相关项，即可完成 f(n−1) 至 f(n) 的递推。
+![alt text](image-33.png)
+![alt text](image-31.png)
+![alt text](image-32.png)
+```java
+double[] dp = new double[6];
+Arrays.fill(dp,1.0/6.0);
+for(int i=2;i<=num;i++){
+    double[] tmp = new double[5*i + 1];//6n - n +1
+    for(int j=0;j<dp.length;j++){
+        for(int k=0;k<6;k++){
+            tmp[j+k]+=dp[j]/6.0;
+        }
+    }
+    dp=tmp;
+}
+return dp;
+```
 # 图论 
 ## LCR 105 岛屿最大面积
 ```java
@@ -3233,6 +3468,66 @@ String num_str = String.valueOf(math_num);
 //取math_num的第num_no位
 return num_str.charAt(num_no)-'0';
 ```
+## LCR 187 破冰游戏(约瑟夫环)
+![alt text](image-34.png)
+从8个人开始，每次杀掉一个人，去掉被杀的人，然后把杀掉那个人之后的第一个人作为开头重新编号
+                                                                (当前位置-隔几个) mod 当前总人数 = 下一个位置
+                                                                                        N
+第一次C被杀掉，人数变成7，D作为开头，（最终活下来的G的编号从6变成3）(6-3) mod 7=3
+第二次F被杀掉，人数变成6，G作为开头，（最终活下来的G的编号从3变成0）(3-3) mod 6=3
+第三次A被杀掉，人数变成5，B作为开头，（最终活下来的G的编号从0变成3）(0-3) mod 4=3
+                                                       3    0  (3-3) mod 3 = 0
+                                                       0    1  (0-3) mod 2 = 1
+                                                       1    1  (1-3) mod 1 = 1
+                                                       1    0  (1-3) mod 0 = 0
+                                                            列
+                                                            6 3 0 3 0 1 1 0即为绿色存活的人所有的下标
+以此类推，当只剩一个人时，他的编号必定为0！（重点！）
+
+开始反推
+
+如何才能将N=7的排列变回到N=8呢？
+我们先把被杀掉的C补充回来，然后右移m个人，发现溢出了，再把溢出的补充在最前面
+![alt text](image-35.png)
+因此我们可以推出递推公式f(8,3)=[f(7,3)+3]%8
+进行推广泛化，即f(n,m)=[f(n−1,m)+m]%n
+```java
+public int iceBreakingGame(int num, int target) {
+    int x= 0;
+    for(int i=2;i<=num;i++){
+        x = (x+target) % i;
+    }
+    return x;
+}
+```
+## LCR 189 设计机械累加器
+不允许使用 乘除、if-else、switch-case、for 循环、while 循环，及条件判断语句
+答：使用递归，并且通过位运算而不是if写出回溯终止条件
+```java
+int res = 0;
+public int mechanicalAccumulator(int target) {
+    boolean x = target > 1 && mechanicalAccumulator(target - 1) > 0;
+    res += target;
+    return res;
+}
+```
+## LCR 192 把字符串转换成整数(atoi函数)
+```java
+int res = 0,bndry = Integer.MAX_VALUE/10;
+int i=0,sign=1,length=str.length();
+if(length==0)return 0;
+while(str.charAt(i)==' ')
+    if(++i==length) return 0;
+if(str.charAt(i) == '-')sign=-1;
+if(str.charAt(i) == '-' || str.charAt(i)=='+')i++;
+for(int j=i;j<length;j++){
+    if(str.charAt(j) < '0' || str.charAt(j) > '9')break;
+    if(res > bndry || res == bndry && str.charAt(j) > '7')
+        return sign == 1 ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+    res = res *10 +(str.charAt(j)-'0');
+}
+return sign * res;
+```
 # 树
 ## LCR 043 完全二叉树插入器
 只有倒数第二层最右侧的若干个节点以及最后一层的全部节点可以再添加子节点，用candidate数组存储
@@ -3655,6 +3950,21 @@ private void dfs(Node cur){
     
     pre = cur;//pre指向当前的cur
     dfs(cur.right);//全部迭代完成后，pre指向双向链表中的尾节点
+}
+```
+## LCR 176 判断是否为平衡二叉树
+```java
+//语句编写顺序
+public boolean isBalanced(TreeNode root) {
+    return getHeight(root)!=-1;//7
+}
+private int getHeight(TreeNode root){
+    if(root==null)return 0;             //1
+    int l = getHeight(root.left);       //2
+    if(l==-1)return -1;                 //6
+    int r = getHeight(root.right);      //3
+    if(r==-1 || Math.abs(r-l)>1)return -1;//5 先判断Math.abs(r-l)>1 再写r==-1 ||加快回溯 再写6
+    return Math.max(l,r)+1;             //4
 }
 ```
 # 手写排序
