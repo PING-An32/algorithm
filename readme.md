@@ -148,7 +148,29 @@ while(dataB != 0){//当进位为0时跳出
 }
 return dataA;
 ```
+# 贪心
+
+## HOT 100 跳跃游戏Ⅱ
+
+```java
+public int jump(int[] nums) {
+    int end = 0;
+    int maxPosition = 0;
+    int steps = 0;
+    for(int i=0;i<nums.length-1;i++){
+        //找能跳的最远的
+        maxPosition = Math.max(maxPosition,nums[i]+i);
+        if(i==end){
+            end = maxPosition;
+            steps++;
+        }
+    }
+    return steps;
+}
+```
+
 # 双指针
+
 ## LCR 139 训练计划Ⅰ（将奇数放前面，偶数放后面）
 1.指针left从左向右寻找偶数
 2.指针right从右向左寻找技术
@@ -460,7 +482,60 @@ private int mergeAndCount(int[] record,int left,int mid,int right,int[] temp){
 }
 ```
 
+## HOT 100 接雨水
+
+```java
+public int trap(int[] height) {
+    int left_max=0,right_max = 0;
+    int left=0,right=height.length-1;
+    int ans=0;
+    while(left<=right){
+        left_max = Math.max(left_max,height[left]);
+        right_max = Math.max(right_max,height[right]);
+        if(height[left]<height[right]){
+            ans+=left_max-height[left];
+            ++left;
+        }else{
+            ans+=right_max-height[right];
+            --right;
+        }
+    }
+    return ans;
+}
+```
+
+## HOT 100 找到字符串中所有字母异位词
+
+```java
+public List<Integer> findAnagrams(String s, String p) {
+    int[] target = new int[26];
+    int[] window = new int[26];
+    int n = p.length();
+    if(s.length()<n)return new ArrayList<Integer>();
+
+    List<Integer> ans = new ArrayList();
+    for(char c:p.toCharArray()){
+        target[c-'a']+=1;
+    }
+    for(char c:s.substring(0,n).toCharArray()){
+        window[c-'a']+=1;
+    }
+    if(Arrays.equals(target,window)){
+        ans.add(0);
+    }
+    for(int i=0;i<s.length()-n;i++){
+        window[s.charAt(i)-'a']-=1;
+        window[s.charAt(i+n)-'a']+=1;
+        if(Arrays.equals(target,window)){
+            ans.add(i+1);
+        }
+    }
+    return ans;
+}
+```
+
 # 链表
+
 ## LCR 021 删除链表的倒数第N个节点
 先得到一个领先head节点N个数的节点，再同时遍历（先走N步再一起走）
 ## LCR 022 环形链表Ⅱ
@@ -734,7 +809,29 @@ private ListNode mergeTwoLists(ListNode list1,ListNode list2){
     return dummy.next;
 }
 ```
+## HOT 100 两数相加
+
+```java
+public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+    ListNode dummy = new ListNode(); // 哨兵节点
+    ListNode cur = dummy;
+    int carry = 0; // 进位
+    while (l1 != null || l2 != null || carry != 0) { // 有一个不是空节点，或者还有进位，就继续迭代
+        if (l1 != null) carry += l1.val; // 节点值和进位加在一起
+        if (l2 != null) carry += l2.val; // 节点值和进位加在一起
+        cur = cur.next = new ListNode(carry % 10); // 每个节点保存一个数位
+        carry /= 10; // 新的进位
+        if (l1 != null) l1 = l1.next; // 下一个节点
+        if (l2 != null) l2 = l2.next; // 下一个节点
+    }
+    return dummy.next; // 哨兵节点的下一个节点就是头节点
+}
+```
+
+
+
 # 堆栈队列
+
 ## LCR 030 O(1)时间插入、删除和获取随机元素
 变长数组+哈希表
 插入操作时，首先判断 val 是否在哈希表中，如果已经存在则返回 false，如果不存在则插入 val，操作如下：
@@ -908,6 +1005,7 @@ temperatures = [73,74,75,71,69,72,76,73]
 · 3比栈顶5小，将3入栈，直接记录答案1
 · 4比栈顶3大，将3出栈，将4入栈，记录答案2
 · 1比栈顶4小，将1入栈，记录答案1
+
 ```java
 int n = temperatures.length;
 int[] ans = new int[n];
@@ -2363,6 +2461,20 @@ for(int i=1;i<=n;i++){
     }
 }
 return dp[n][amount]<=Integer.MAX_VALUE-100 ? dp[n][amount] : -1;//灵神使用 ans < Integer.MAX_VALUE/2
+
+int[] dp = new int[amount+1];//dp[i]表示凑成amount为i需要的最少的硬币个数
+
+dp[0] = 0;
+for(int i=1;i<=amount;i++)dp[i]=Integer.MAX_VALUE/2;
+
+for(int capacity=1;capacity<=amount;capacity++){
+    for(int coin: coins){
+        if(capacity>=coin){
+            dp[capacity] = Math.min(dp[capacity-coin]+1,dp[capacity]);
+        }
+    }
+}
+return dp[amount] == Integer.MAX_VALUE/2 ? -1 : dp[amount];
 ```
 ## LCR 104 组合总和Ⅳ
 错误写法：为什么错误？ 下面这种写法只能保证不同的组合被找出来（集合）           注意是排列数而不是组合数
@@ -2570,7 +2682,32 @@ for(int i=2;i<=num;i++){
 }
 return dp;
 ```
+## HOT 100 和为K的子数组（由于存在负数无法滑动窗口）
+
+```java
+cnt.merge(preSum,1,Integer::sum);
+//key：需要插入或更新的键。
+//value：与键关联的新值。
+//remappingFunction：一个在键已存在时用于计算新值的函数。
+cnt.put(preSum,cnt.getOrDefault(preSum,0)+1);
+
+public int subarraySum(int[] nums, int k) {
+    int ans = 0;
+    int preSum = 0;
+    Map<Integer,Integer> cnt = new HashMap<>(nums.length+1);
+    cnt.put(0,1);
+    for(int num:nums){
+        preSum += num;
+        ans += cnt.getOrDefault(preSum-k,0);
+        if(cnt.containsKey(preSum)==false)cnt.put(preSum,1);//可以用merge简化，或者getOrDefault
+        else cnt.put(preSum,cnt.get(preSum)+1);
+    }
+    return ans;
+}
+```
+
 # 图论 
+
 ## LCR 105 岛屿最大面积
 ```java
 // 求每个点的岛屿面积，默认0
@@ -3671,8 +3808,8 @@ public TreeNode rdeserialize(Deque<String> dataList){
 public int pathSum(TreeNode root, int targetSum) {
     Map<Long, Integer> prefix = new HashMap<Long, Integer>();
     prefix.put(0L, 1);
-    return dfs(root, prefix, 0, targetSum);
-}
+    return dfs(root, prefix, 0, targetSum); 
+}//把问题转化为以某个节点为 根节点的路径总和数 等于他 左节点 和 右节点的路径总和 数
 
 public int dfs(TreeNode root, Map<Long, Integer> prefix, long curr, int targetSum) {
     if (root == null) {
