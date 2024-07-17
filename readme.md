@@ -1,34 +1,384 @@
-# Java集合
-### ArrayList转 对应的 基本数据类型的数组
+## Java集合
+
+### Arrays静态类方法
+
+```java
+void = Arrays.sort(T[], Comparator<? super T>)  
+void = Arrays.swap(Object[],int pos1,int pos2)  
+boolean flag = Arrays.equals(int[],int[])
+void = Arrays.fill(int[] a,int val)//fill a array with val
+int[] new = Arrays.copyOf(int[] original,int newLength)//copy 0~newLength of original to new
+int[] new = Arrays.copyOfRange(int[] original,int from,int to)
+String str = Arrays.toString(int[])
+List<T> list = Arrays.asList(T... a)
+    e.g. List<String> strings = Arrays.asList("abc", "", "bc", "efg", "abcd","", "jkl");
+IntStream stream = Arrays.stream(int[])//重要，返回的是IntStream对象，请看streamAPI部分
+```
+
+### String类方法
+
+```java
+String str = new String(char value[])
+int length = str.length()
+boolean flag = str.isEmpty();
+char ch = str.charAt(int position)
+boolean flag = str1.equals(str2)
+boolean flag = str1.equalsIgnoreCase(str2)
+boolean flag = str.startsWith(String prefix)
+boolean flag = str.endsWith(String suffix)
+int index = str.indexOf(int ch)//return 1 if str="hello",ch='e'
+//有点奇怪这里用的是int而不是char，JDK是为了兼容Unicode，返回的是首次出现的索引坐标
+//可以通过indexOf>-1判断当前字符串中是否存在当前字符
+int index = str.indexOf(int ch,int fromIndex)
+int index = str.indexOf(String str)//return 6 if str="hello world",ch='world'
+int index = str.indexOf(String str,int fromIndex)
+int index = str.lastIndexOf(int ch)//省略fromIndex版本
+int index = str.lastIndexOf(String str)//省略fromIndex版本
+//从后往前遍历 indexOf是从前往后遍历
+String newstr = str.substring(int beginIndex)
+String newstr = str.substring(int beginIndex,int endIndex)
+String newstr = str.toLowerCase()
+String newstr = str.toUpperCase()
+String newstr = str.trim()//去除前导和后导空格
+char[] chars = str.toCharArray()
+String corresponding_str = valueOf(char/int/long/float/double)
+//String转字符/int/long/float/double
+str1.intern()==str2.intern()//比较str1和str2在字符串常量池的值
+```
+
+### StringBuilder方法
+
+```java
+StringBuilder sb = new StringBuilder(String str/int num)
+StringBuilder sb = sb.append(String str/StringBuilder sb/char ch/char[] chars/int num)
+StringBuilder sb = sb.delete(int start,int end)
+StringBuilder sb = sb.deleteCharAt(int index)
+StringBuilder sb = sb.replace(int start,int end,String str)//替换start~end为str
+StringBuilder sb = sb.insert(int index,char ch/int num/long/float/double)//在指定位置插入一个基本数据类型
+StringBuilder sb = sb.reverse()
+StringBuilder sb = sb.toString()
+    
+//判断两StringBuilder是否相等
+sb1.toString().equals(sb2.toString())
+```
+
+### 包装类方法
+
+```java
+装箱(valueOf)：创建包装类实例的过程
+    Xxx Element = Xxx.valueOf(xxx element)//Xxx为包装类型，xxx为基本数据类型
+    Character Ch = Character.valueOf(char ch)
+    Integer Num = Integer.valueOf(int num)
+拆箱(xxxValue)：将包装类实例转换为基本数据类型的过程
+    xxx element = Element.XxxValue()
+    char ch = Ch.charValue()
+    int num = Num.intValue()
+
+Character:
+	String str = Character.toString(char ch)//静态方法，不需要实例，基本类型转换到String使用
+    boolean flag = Character.isLetterOrDigit(char ch)
+    boolean flag = Character.isLetter(char ch)
+    boolean flag = Character.isDigit(char ch)
+    boolean flag = Character.isLowerCase(char ch)
+    boolean flag = Character.isUpperCase(char ch)
+    char new_ch = Character.toLowerCase(char old_ch)
+    char new_ch = Character.toUpperCase(char old_ch)
+Integer:
+	String str = Integer.toString(int i)//静态方法，不需要实例，基本类型转换到String使用
+    int num = Integer.parseInt(String str)//静态方法，不需要实例，String转换到基本类型使用
+    Integer Num = Integer.valueOf(String str)//静态方法，不需要实例，String转换到包装类使用
+    String str = Num.toString()//非静态方法，需要实例，将包装类转换到String使用
+```
+
+![image-20240716174929150](readme.assets/image-20240716174929150.png)
+
+### Comparator函数式接口
+
+```java
+函数式接口(Functional Interface)就是一个有且仅有一个抽象方法，但是可以有多个非抽象方法的接口。
+函数式接口可以被隐式转换为 lambda 表达式。
+Comparator的抽象方法为 int compare(T o1,T o2);
+
+PriorityQueue<int[]> queue = new PriorityQueue<int[]>(new Comparator<int[]>(){
+    public int compare(int[] m,int[] n){
+        return m[1]-n[1];
+    }
+});
+
+var pq = new PriorityQueue<int[]>((a,b)->a[0]-b[0]);
+
+Arrays.sort(intervals,(interval1,interval2)-> interval1[0]-interval2[0]);
+Arrays.sort(intervals,Comparator.comparingInt(a->a[0]));
+
+var cmp = new Comparator<Integer>(){
+    public int compare(Integer a,Integer b){
+        if(map.containsKey(a) && map.containsKey(b)){
+            return map.get(a)-map.get(b);
+        }else if(map.containsKey(a)) return -1;
+        else if(map.containsKey(b)) return 1;
+        else return a-b;
+    }
+};
+
+Arrays.sort(strs,(o1,o2)->(o1+o2).compareTo(o2+o1));
+```
+
+### Collection接口的方法
+
+```java
+size()   isEmpty()	 iterator()	  stream()    contains()
+```
+
+### ArrayList方法
+
+```java
+List<T> list = new ArrayList<T>()
+boolean flag = list.isEmpty()
+int size = list.size()
+int index = list.indexOf(Object)//返回第一个出现的索引坐标，也可以当作contains用
+int index = list.lastIndexOf(Object)
+Object[] array = list.toArray()
+E element = list.get(int index)
+E oldValue = list.set(int index,E newValue)
+//其实set是有返回值的，是oldValue，但是一般不使用
+boolean flag = list.add(E element)
+//add操作也是有返回值的，为true，但一般不使用，不指定位置就是在末尾插入
+void = list.add(int index,E element)
+E oldValue = list.remove(int index)
+//remove操作同理也有一般不使用的返回值，常用场景为list.remove(list.size()-1)，即移除末尾元素
+void = list.removeRange(int fromIndex,int toIndex)
+void = list.clear()//移除list中所有元素
+    
+Iterator<E> itr = list.iterator()//得到一个list的迭代器，E是list内的元素类型
+while(itr.hasNext()){
+    E element = iterator.next();
+    sout(element);
+}
+void = list.forEach(Consumer<? super E> action)//forEach用法，实际还是在用iterator
+list.forEach(element->System.out.println(element));
+
+void = list.sort(Comparator<? super E> c)//Comparator
+```
+
+### ArrayDeque方法
+
+```java
+Deque<T> deque = new ArrayDeque<T>()
+
+push,pop										add
+			队首	----------------------	队尾
+poll,peek,remove								offer
+```
+
+### HashMap方法
+
+```java
+Map<K,V> map = new HashMap();//K是key的类型，V是value的类型
+int size = map.size();
+boolean flag = map.isEmpty();
+V value = map.get(Object key);
+boolean flag = map.containsKey(Object key);
+boolean flag = map.containsValue(Object value);
+V oldvalue或null = map.put(K key,V value)//取决于put是覆盖操作(返回oldvalue)还是新增操作(返回null)
+//put底层调用了putVal，不再进一步分析
+V oldvalue或null = map.remove(Object key)//返回值取决于是否有Key为key的键
+void = map.clear()
+    
+Set<K> keyset = map.keySet()
+Collection<V> value = map.values()		//这三个方法比较重要，keyset,valueset,entryset
+Set<Map.Entry<K,V>> entryset = map.entrySet()
+    
+V value = map.getOrDefault(Object key,V defaultValue)
+V oldvalue或null = map.putIfAbsent(K key,V value)
+//putIfAbsent底层也调用了putVal，putIfAbsent当遇到已存在的key时不会覆盖，只会返回oldvalue
+V value = map.merge(K key,V value,BiFunction remappingFunction)//应该不用掌握
+```
+
+### StreamAPI（Stream接口方法）
+
+pipeline中分为
+
+中间节点intermediate（可以有多个，是懒节点，懒加载，不会立马执行，只是记录了操作，而是遇到终值节点才会执行）
+
+终值节点terminal（只能有一个，只能放在最后面，不是懒加载的，只要执行了终值节点，那么首先会去请求上一个节点，一直迭代到请求第一个节点，聚合操作。）
+
+如何判断中间节点还是终值节点？看方法的返回值是不是Stream流或子类，如果是，那就是中间节点。
+
+**peek()和forEach()作用都是执行一个函数，区别在于peek是中间节点，forEach是终值节点**
+
+影响方式：
+
+1. 过滤(filter)
+2. 转换(map)
+3. 去重(distinct)
+
+采集：
+
+1. list（`List<T> list = ... .collect(Collectors.toList())`）toSet同理
+2. map（`Map<T,E> map = ... .collect(Collectors.toMap(mapfuc1,mapfuc2))`）
+3. group by（`... .collect(Collectors.groupingBy())`）
+4. 数组（`T[] t = .toArray()`）
+5. 求出最大值
+6. 求任意值
+
+```java
+数据流的来源：可以是集合、数组
+集合和数组如何创建stream流？ collection 有stream方法，通过StreamSupport来创建stream对象。
+
+流的创建：
+    appleStore.stream()
+    Arrays.stream(new int[]{1,2,3,4})
+    Stream.of(1,2,3,4)
+演示代码初始化：
+    appleStore.add(new Apple(1,"red",500,"湖南"));
+    appleStore.add(new Apple(2,"red",400,"湖南"));
+    appleStore.add(new Apple(3,"green",300,"湖南"));
+    appleStore.add(new Apple(4,"green",200,"天津"));
+    appleStore.add(new Apple(5,"green",100,"天津"));
+流的不可重复使用性：
+    Stream<Apple> stream1 = appleStore.stream();
+    Stream<Apple> stream2 = stream1.filter(a -> a.getColor().equals("red"));
+    //stream3已找不到stream1，流只能顺序执行，不能分支执行（流的不可重复使用性）
+    Stream<Apple> stream3 = stream1.filter(a -> a.getWeight() > 100);
+中间节点和终值节点：
+    appleStore.stream().filter(a->{
+        System.out.println(a.getColor());
+    	return true;
+	}).toArray();
+	//toArray()是终值节点，一旦被执行，那么中间节点会被执行
+流的执行特性：是一个数据经过管道到达终值节点，再一个数据经过管道到达终值节点
+    appleStore.stream()
+    	.peek(a->System.out.println(a.getColor()))
+    	.peek(a->System.out.println(a.getWeight()))
+    	.toArray();
+	//从结果可以看出 red 500 | red 400 | green 300
+	//而不是		 red red green | 500 400 300
+流的执行特性：上一个节点可以影响下一个节点,影响方式有 过滤(filter) 转换(map) 去重(distinct)
+    appleStore.stream()
+    	.filter(a->a.getColor().equals("red"))
+    	.peek(a->System.out.println(a.getColor()+":"+a.getWeight()))
+    	.toArray();
+	//结果为red:500 | red:400，这里就是 过滤 的影响
+    appleStore.stream()
+    	.filter(a->a.getColor().equals("red"))
+        .map(a->a.getColor())//这里的a为Apple类型
+    	.peek(a->System.out.println(a)//这里的a为String类型
+    	.toArray();
+	//结果为red | red，这里就是 过滤+转换 的影响
+```
+
+```java
+    appleStore.stream()
+    	.filter(a->a.getColor().equals("red")||a.getColor().equals("green"))
+        .map(a->a.getColor())//这里的a为Apple类型
+        .distinct()
+    	.peek(a->System.out.println(a)//这里的a为String类型
+    	.toArray();
+        //输出 red | green
+        //IDEA 调试图如下
+```
+
+![image-20240716214211531](readme.assets/image-20240716214211531.png)
+
+```java
+演示流的采集：
+    Map<Integer,Apple> map = appleStore.stream()
+    	.collect(Collectors.toMap(a->a.getId(),a->a));
+```
+
+| 方法     | 描述                                                         | 操作类型         |
+| -------- | ------------------------------------------------------------ | ---------------- |
+| filter   | 接受一个Boolean表达式来过滤元素<br />.filter(obj->obj.getAttribute().equals(xxx)) | 中间操作         |
+| map      | 将流中元素1：1映射成另外一个元素<br />.map(obj->Integer.parseInt(obj))将流中元素映射成Integer<br />返回值是Stream<Integer>，而mapToInt返回的是IntStream | 中间操作         |
+| mapToInt | 将流中元素映射成int，mapToLong、mapToDouble<br />返回值是IntStream，存的是int基本数据类型，性能高<br />sum(), average(),min(),max(),count()等是IntStream重写的方法 | 中间操作         |
+| boxed    | IntStream转换为Stream<Integer>                               | 中间操作         |
+| flatMap  | 处理一对多的转换，如map返回的是一个List，将会进一步拆分。<br />通过传入一个mapper函数来进行拆分<br />orders.flatMap(order -> order.getLineItems().stream())<br />Stream<String> lines = Files.lines(path, StandardCharsets.UTP_8)<br />Stream<String> words = lines.flatMap(line -> Stream.of(line.split(" +"))) | 中间操作         |
+| distinct | 基于equal表达式去重                                          | 中间操作         |
+| sorted   | 若无参数，如果没有实现Comparable，抛ClassCastException<br />也可以传一个Comparator作为参数 | 中间操作         |
+| peek     | 参数是一个Consumer类型的action，对流中元素做一次操作<br />遍历流中所有元素，如forEach。不同在于不会结束流 | 中间操作         |
+| limit    | 根据传入参数，截断流的长度                                   | 中间操作         |
+| forEach  | 参数也是Consumer类型的action，遍历流中所有元素               | ==**终值操作**== |
+| toArray  | 将流中元素转换成一个数组返回                                 | ==**终值操作**== |
+| reduce   | 归约合并操作，sum,min,max,average是特殊的reduce操作<br />对流中元素加和：Integer sum = intergers.reduce(0, (a,b) -> a+b) | ==**终值操作**== |
+| collect  | 采集数据，返回一个新的结果<br />参数说明：<br />Supplier<R>：采集需要返回的结果<br />BiConsumer<R, ? super T>：传递结果与元素进行合并<br />BiConsumer<R,R>：在并发执行的时候 结果合并操作 | ==**终值操作**== |
+| of       | 用来创建流                                                   | 初始操作         |
+
+```java
+reduce：
+    参数是BinaryOperator接口，定义了一个apply方法（2输入1输出）
+    负责把上次累加的结果和本次的元素进行运算，并返回累加的结果
+    int sum = Stream.of(1,2,3,4,5,6,7,8,9).reduce(0,(acc,n)->acc+n);//45
+    ||
+	Stream<Integer> stream = ...
+    int sum = 0;
+	for(n : stream){
+        sum = (sum,n) -> sum + n;
+    }//45
+
+	上面reduce内的0是初始值的意思，如果去掉reduce内的0，返回的是一个Optional<Integer>
+	int s = Stream.of(1,2,3,4,5,6,7,8,9).reduce(1,(acc,n)->acc*n)//362880
+
+    Optional<Integer> opt = stream.reduce((acc,n)->acc+n)
+    if(opt.isPresent()){
+        sout(opt.get())
+    }
+
+	将配置文件的每一行配置通过map()和reduce()操作聚合成一个Map<String,String>:
+    List<String> props = List.of("profile=native", "debug=true", "logging=warn", "interval=500");
+    Map<String, String> map = props.stream()
+        // 把k=v转换为Map[k]=v:
+        .map(kv -> {
+            String[] ss = kv.split("\\=", 2);
+            return Map.of(ss[0], ss[1]);
+        })
+        // 把所有Map聚合到一个Map:
+        .reduce(new HashMap<String, String>(), (m, kv) -> {
+            m.putAll(kv);
+            return m;
+        });
+    // 打印结果:
+    map.forEach((k, v) -> {
+        System.out.println(k + " = " + v);
+    });
+
+collect：
+    toList:
+    	把Stream的每个元素收集到List的方法是调用.collect()并传入Collectors.toList()对象，它实际上是一个Collector实例，通过类似reduce()的操作，把每个元素添加到一个收集器中（实际上是ArrayList）。类似的，collect(Collectors.toSet())可以把Stream的每个元素收集到Set中。
+    toMap:
+        Stream<String> stream = Stream.of("APPL:Apple", "MSFT:Microsoft");
+        Map<String, String> map = stream
+            .collect(Collectors.toMap(
+                // 把元素s映射为key:
+                s -> s.substring(0, s.indexOf(':')),//mapperfunction1
+                // 把元素s映射为value:
+                s -> s.substring(s.indexOf(':') + 1)));//mapperfunction2
+	to[]:
+		List<String> list = List.of("Apple", "Banana", "Orange");
+		String[] array = list.stream().toArray(String[]::new);
+	groupingBy:
+		List<String> list = List.of("Apple", "Banana", "Blackberry", "Coconut", "Avocado", "Cherry", "Apricots");
+        Map<String, List<String>> groups = list.stream()
+                .collect(Collectors.groupingBy(s -> s.substring(0, 1), Collectors.toList()));
+		结果：
+		{
+            A=[Apple, Avocado, Apricots],
+            B=[Banana, Blackberry],
+            C=[Coconut, Cherry]
+        }
+		分组输出使用Collectors.groupingBy()，它需要提供两个函数：一个是分组的key，这里使用s -> s.substring(0, 1)，表示只要首字母相同的String分到一组，第二个是分组的value，这里直接使用Collectors.toList()，表示输出为List
+		
+    
+ArrayList转 对应的 基本数据类型的数组
 ArrayList<Integer> ans to int[]: ans.stream().mapToInt(Integer::intValue).toArray();
-### 基本数据类型数组int[]转List
+
+基本数据类型数组int[]转 List (涉及IntStream到Stream<Integer>的转换)
 List<Integer> list = Arrays.stream(array).boxed().collect(Collectors.toList());
-### 取基本数据类型数组int[] nums的最大值,和
+
+取基本数据类型数组int[] nums的最大值,和
 total = Arrays.stream(nums).sum()   是否需要加getAsInt() ？
 max = Arrays.stream(nums).max()
-### 字符串str转字符数组char[]
-char[] array = str.toCharArray()
-### 取出字符串中的第i个字符
-char c = str.charAt(i)
-### 字符与字符之间运算
-int sub = p.charAt(i) - 'a'
-### 数组int[]与数组int[]之间比较
-Arrays.equals(cnt1,cnt2)
-### StringBuffer/StringBuilder转String
-sb.toString()
-进阶：两sb判断是否相等
-sb1.toString().equals(sb2.toString())
-### 字符判断是否是英文字母和数字
-char ch
-Character.isLetterOrDigit(ch)
-### 字符转小写
-Character.toLowerCase(ch)
-### String转int
-int hour = Integer.parseInt(str)
-### int转String
-String.valueOf(int)
-### char[] 转String
-String word = new String(array)
+```
+
 ### 存储图论中的边
 map和list均可
 Map<Character,List<Character>> edges = new HashMap()
@@ -38,10 +388,6 @@ List<Character> edge = edges.get(ch)
 List<List<Integer>> edges = new ArrayList()
 edges.add(new ArrayList<Integer>())//先初始化好，防止空指针异常
 List<Integer> edge = edges.get(i)
-### HashMap
-Set<Character> set = map.keySet()
-map.values()
-Map<Character,List<Character>> entry = map.entrySet()
 
 # 位运算
 ## LCR 004 只出现一次的数字Ⅱ
@@ -140,6 +486,7 @@ return new int[]{x, y};
 ## LCR 190 加密运算
 不使用四则运算符 计算两数之和
 ![alt text](image-36.png)
+
 ```java
 while(dataB != 0){//当进位为0时跳出
     int c = (dataA & dataB) << 1;//c=进位
@@ -1651,7 +1998,7 @@ public Trie() {
 
 /** Inserts a word into the trie. */
 public void insert(String word) {
-    Trie node = this;
+    Trie node = this;//重要
     for(int i=0;i<word.length();i++){
         char ch = word.charAt(i);
         int index = ch -'a';
@@ -2096,7 +2443,43 @@ private void dfs(int i,String goods){
     }
 }
 ```
+## HOT 100 电话号码的字母组合
+
+```java
+List<String> ans = new ArrayList();
+StringBuilder path = new StringBuilder();
+Map<Character,String> phonebook = new HashMap();
+public List<String> letterCombinations(String digits) {
+    if(digits.length()==0)return ans;
+    phonebook.put('2',"abc");
+    phonebook.put('3',"def");
+    phonebook.put('4',"ghi");
+    phonebook.put('5',"jkl");
+    phonebook.put('6',"mno");
+    phonebook.put('7',"pqrs");
+    phonebook.put('8',"tuv");
+    phonebook.put('9',"wxyz");
+    dfs(0,digits);
+    return ans;
+}
+private void dfs(int i,String digits){
+    if(i==digits.length()){
+        ans.add(path.toString());
+        return;
+    }
+    for(char c:phonebook.get(digits.charAt(i)).toCharArray()){
+        path.append(c);
+        dfs(i+1,digits);
+        path.deleteCharAt(path.length()-1);
+    }
+}
+//使用以下方式更短
+private static final String[] MAPPING = new String[]{"","","abc","def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"};
+for(char c :MAPPING[digits.charAt(i)].toCharArray())
+```
+
 # 动态规划
+
 ## LCR 088 爬楼梯
 ```java
 n=9
@@ -3416,7 +3799,47 @@ public int find(int x){
     return f[x]==x ? x : (f[x] = find(f[x]));
 }
 ```
+## HOT 100 腐烂的橘子(BFS)
+
+```java
+private static final int[][] DIRECTIONS = new int[][]{{0,1},{1,0},{-1,0},{0,-1}};
+public int orangesRotting(int[][] grid) {
+    int row = grid.length;
+    int col = grid[0].length;
+    int fresh = 0;
+    List<int[]> q = new ArrayList();
+    for(int i=0;i<row;i++){
+        for(int j=0;j<col;j++){
+            if(grid[i][j]==2){
+                q.add(new int[]{i,j});// 一开始就腐烂的橘子
+            }else if(grid[i][j]==1){
+                fresh++;
+            }
+        }
+    }
+    int ans = -1;
+    while(!q.isEmpty()){
+        ans++;// 经过一分钟
+        List<int[]> temp = q;
+        q = new ArrayList();
+        for(int[] pos:temp){// 已经腐烂的橘子
+            for(int[] d : DIRECTIONS){
+                int i = pos[0]+d[0];
+                int j = pos[1]+d[1];
+                if(0<=i && i<row && 0 <= j && j < col && grid[i][j] == 1){// 新鲜橘子
+                    fresh--;
+                    grid[i][j] = 2;// 变成腐烂橘子
+                    q.add(new int[]{i,j});
+                }
+            }
+        }
+    }
+    return fresh > 0 ? -1 : Math.max(ans,0);
+}
+```
+
 # 聪明题
+
 ## LCR 119 最长连续序列 
 ```java
 Set<Integer> num_set = new HashSet<Integer>();
@@ -3640,6 +4063,7 @@ public int iceBreakingGame(int num, int target) {
 ## LCR 189 设计机械累加器
 不允许使用 乘除、if-else、switch-case、for 循环、while 循环，及条件判断语句
 答：使用递归，并且通过位运算而不是if写出回溯终止条件
+
 ```java
 int res = 0;
 public int mechanicalAccumulator(int target) {
