@@ -165,9 +165,9 @@ void = list.sort(Comparator<? super E> c)//Comparator
 ```java
 Deque<T> deque = new ArrayDeque<T>()
 
-push,pop										add
-			队首	----------------------	队尾
-poll,peek,remove								offer
+add,removeLast								push,pop
+		队尾	----------------------	队首
+offer										poll,peek,remove
 ```
 
 ### HashMap方法
@@ -551,11 +551,7 @@ for(int i=0;i<nums.length-2;i++){//首先固定一个nums[i]，后从nums[i+1]~n
         }
         int lrSum = nums[l]+nums[r];
         if(lrSum == -nums[i]){
-            List<Integer> list = new ArrayList<>();
-            list.add(nums[i]);
-            list.add(nums[l]);
-            list.add(nums[r]);
-            lists.add(list);
+            lists.add(Stream.of(nums[i],nums[left],nums[right]).collect(Collectors.toList()));
             l++;
             r--;
         }
@@ -564,6 +560,32 @@ for(int i=0;i<nums.length-2;i++){//首先固定一个nums[i]，后从nums[i+1]~n
     }
 }
 return lists;
+
+for(int i=0;i<n-2;i++){
+    if(nums[i]>0){
+        break;
+    }
+    if(i>=1 && nums[i]==nums[i-1]){
+        continue;
+    }
+    //简化为在i~n之间寻找和为-nums[i]的对
+    int left = i+1;
+    int right = n-1;
+    while(left<right){
+        if(nums[left]+nums[right]<-nums[i]){
+            left++;
+        }else if(nums[left]+nums[right]>-nums[i]){
+            right--;
+        }else{
+            ans.add(Stream.of(nums[i],nums[left],nums[right]).collect(Collectors.toList()));
+            while(left<right && nums[left]==nums[left+1])
+                left++;
+            left++;
+            while(left<right && nums[right]==nums[right-1])
+                right--;
+            right--;
+        }
+    }
 ```
 ## LCR 009 乘积小于K的子数组
 [10,5,2,6], k = 100
@@ -1548,6 +1570,25 @@ for(int i=0;i<n;i++){
     }
 }
 return ans;
+
+public int[] maxSlidingWindow(int[] nums, int k) {
+    Deque<Integer> queue = new ArrayDeque(k);
+    int n = nums.length;
+    int[] ans = new int[n-k+1];
+    for(int i=0;i<n;i++){
+        while(!queue.isEmpty() && nums[i]>nums[queue.peekLast()]){
+            queue.removeLast();
+        }
+        queue.offer(i);
+        if(i-queue.peek()>= k){
+            queue.pop();
+        }
+        if(i>=k-1){
+            ans[i-k+1] = nums[queue.peek()];
+        }
+    }
+    return ans;
+}
 ```
 ## LCR 184 设计自助结算系统（单调队列）(自动装箱)
 ![alt text](9c24eac03f9e61c8bb2c678a65bf649.png)
