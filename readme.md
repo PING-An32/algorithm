@@ -299,6 +299,7 @@ pipeline中分为
 | limit    | 根据传入参数，截断流的长度                                   | 中间操作         |
 | forEach  | 参数也是Consumer类型的action，遍历流中所有元素               | ==**终值操作**== |
 | toArray  | 将流中元素转换成一个数组返回                                 | ==**终值操作**== |
+| getAsInt | IntStream的max(),min(),reduce()操作返回一个OptionalInt<br />用OptionalInt的getAsInt()方法来转换，而sum()返回的是int，不需要操作 | ==**终值操作**== |
 | reduce   | 归约合并操作，sum,min,max,average是特殊的reduce操作<br />对流中元素加和：Integer sum = intergers.reduce(0, (a,b) -> a+b) | ==**终值操作**== |
 | collect  | 采集数据，返回一个新的结果<br />参数说明：<br />Supplier<R>：采集需要返回的结果<br />BiConsumer<R, ? super T>：传递结果与元素进行合并<br />BiConsumer<R,R>：在并发执行的时候 结果合并操作 | ==**终值操作**== |
 | of       | 用来创建流                                                   | 初始操作         |
@@ -375,8 +376,8 @@ ArrayList<Integer> ans to int[]: ans.stream().mapToInt(Integer::intValue).toArra
 List<Integer> list = Arrays.stream(array).boxed().collect(Collectors.toList());
 
 取基本数据类型数组int[] nums的最大值,和
-total = Arrays.stream(nums).sum()   是否需要加getAsInt() ？
-max = Arrays.stream(nums).max()
+total = Arrays.stream(nums).sum()   		是否需要加getAsInt()？ sum不需要，max需要
+max = Arrays.stream(nums).max().getAsInt()
 ```
 
 ### 存储图论中的边
@@ -1722,7 +1723,34 @@ public long getTime(int[] piles,int speed){
     return time;
 }
 ```
+## HOT 100 最长有效括号(栈)
+
+```java
+//这个动态规划做法实在是看不懂
+public int longestValidParentheses(String s) {
+    int maxans = 0;
+    Deque<Integer> stack = new ArrayDeque();
+    stack.push(-1);//表示从0开始
+    for(int i=0;i<s.length();i++){
+        if(s.charAt(i)=='('){
+            stack.push(i);//存的是下标
+        }else{
+            stack.pop();
+            if(stack.isEmpty()){//一旦栈为空，说明遇到了无效的')'，push当前下标进去，表示从0开始
+                stack.push(i);
+            }else{
+                maxans = Math.max(maxans,i-stack.peek());//i=6，当5pop掉之后，i-stack.peek()=2
+            }
+        }
+    }
+    return maxans;
+}
+```
+
+![image-20240718194148508](readme.assets/image-20240718194148508.png)
+
 # 其他
+
 ## LCR 034 验证外星语字典
 words = ["hello","leetcode"], order = "hlabcdefgijkmnopqrstuvwxyz"
 ```java
@@ -2519,6 +2547,82 @@ private static final String[] MAPPING = new String[]{"","","abc","def", "ghi", "
 for(char c :MAPPING[digits.charAt(i)].toCharArray())
 ```
 
+## HOT 100 单词搜索
+
+```java
+public boolean exist(char[][] board, String word) {
+    this.word =word;
+    this.board = board;
+    row = board.length;
+    col = board[0].length;
+    for(int i=0;i<row;i++){
+        for(int j=0;j<col;j++){
+            if(board[i][j] == word.charAt(0)){
+                if(dfs(i,j,1))return true;
+            }
+        }
+    }
+    return false;
+}
+private boolean dfs(int i,int j,int length){
+    if(!(i>=0 && i<row && j>=0 && j<col)){
+        return false;
+    }
+    if(board[i][j] != word.charAt(length-1)){
+        return false;
+    }
+    if(length==word.length()){
+        return true;
+    }
+    board[i][j] = ' ';//不要忘了这一步，很重要
+    boolean res = dfs(i+1,j,length+1) | dfs(i,j+1,length+1) | dfs(i-1,j,length+1) | dfs(i,j-1,length+1);
+    board[i][j] = word.charAt(length-1);//恢复现场
+    return res;
+}
+```
+
+## HOT 100 N皇后
+
+每行每列只能有一个皇后 + 行列和不能相同（左下右上 对角线） + 行列差不能相同（左上右下 对角线）
+
+```java
+List<List<String>> ans = new ArrayList();
+int[] col;
+boolean[] onPath;
+boolean[] diag1;
+boolean[] diag2;
+public List<List<String>> solveNQueens(int n) {
+    col = new int[n];
+    onPath = new boolean[n];//				每行每列
+    diag1 = new boolean[n * 2 - 1];//		/对角线
+    diag2 = new boolean[n * 2 - 1];//		\对角线
+    dfs(0,n);
+    return ans;
+}
+private void dfs(int r,int n){
+    if(r==n){
+        List<String> board = new ArrayList(n);
+        for(int c : col){
+            char[] row = new char[n];
+            Arrays.fill(row,'.');
+            row[c] = 'Q';
+            board.add(new String(row));
+        }
+        ans.add(board);
+        return;
+    }
+    for(int c =0;c<n;c++){
+        int rc = r-c+n-1;//+n-1的目的是防止r-c<0溢出
+        if(!onPath[c] && !diag1[r+c] && !diag2[rc]){
+            col[r] = c;
+            onPath[c] = diag1[r+c] = diag2[rc] = true;//标记不可达的区域
+            dfs(r+1,n);
+            onPath[c] = diag1[r+c] = diag2[rc] = false;//恢复现场
+        }
+    }
+}
+```
+
 # 动态规划
 
 ## LCR 088 爬楼梯
@@ -2563,18 +2667,18 @@ return f[n];
 ## LCR 089 打家劫舍
 ```java
 public int rob(int[] nums) {
-    //f[i]表示从0或1房屋开始能偷窃到的最高金额
+    //f[i]表示从0或1房屋开始到i号房屋能偷窃到的最高金额
     int n = nums.length;
     if(n==1){
         return nums[0];
     }
-    int[] f = new int[n];
-    f[0] = nums[0];
-    f[1] = Math.max(nums[0],nums[1]);
+    int[] dp = new int[n];
+    dp[0] = nums[0];
+    dp[1] = Math.max(nums[0],nums[1]);
     for(int i=2;i<n;i++){
-        f[i] = Math.max(f[i-2]+nums[i],f[i-1]);
+        dp[i] = Math.max(dp[i-2]+nums[i],dp[i-1]);
     }
-    return f[n-1];
+    return dp[n-1];
 }
 ```
 ## LCR 090 打家劫舍Ⅱ
@@ -2729,7 +2833,7 @@ private boolean isPalindrome(int i,int j){//长度为1时i=j
     return true;
 }
 ```
-## LCR 095 最长公共子序列lcs
+## LCR 095 最长公共子序列LCS
 经典中的经典
 ```java
 int len1 = text1.length();
@@ -2812,7 +2916,7 @@ for(int i= 1;i<=n;i++){
 }
 return Arrays.stream(dp[n]).min().getAsInt();
 ```
-## LCR 101 分割等和子集
+## LCR 101 分割等和子集（HOT 100）
 0-1背包问题
 ```java
 int target = sum/2;
@@ -2820,7 +2924,7 @@ if(maxNum > target){
     return false;
 }
 boolean[][] dp = new boolean[n][target+1];//dp[i][j]表示从数组的[0,i]下标范围内选取若干个正整数
-                                            //是否存在一种选取方案使得被选取的正整数的和等于j(capacity)
+                                       //是否存在一种选取方案使得被选取的正整数的和等于j(capacity)
                                             //dp[0][nums[0]] = true;
 for(int i=0;i<n;i++){//第一列置true，因为容量为0时不选即是一种选取方案使得容量等于0
     dp[i][0]=true;
@@ -2830,7 +2934,7 @@ for(int i=1;i<n;i++){
     for(int j=1;j<=target;j++){//capacity为1，2...target时是否存在
         if(j>=nums[i]){//把j理解为capacity，对于当前nums[i]可以选也可以不选
             dp[i][j] = dp[i-1][j] | dp[i-1][j-nums[i]];//dp[i-1][j]保证了若当前的上面为1，则当前为1
-            //                               通俗讲也就是如果从一个班里能找出10个男生，那么班里再转来一位同学，必然也能再找出10个男生
+            //  通俗讲也就是如果从一个班里能找出10个男生，那么班里再转来一位同学，必然也能再找出10个男生
             //              不选            选
         }else{//无法选当前nums[i]
             dp[i][j] = dp[i-1][j];
@@ -2838,8 +2942,19 @@ for(int i=1;i<n;i++){
     }
 }
 return dp[n-1][target];//capacity为target时是否存在
+
+//建议复习时忽略下面的优化
+
+boolean[] dp = new boolean[target+1];//dp[i]表示 使用nums中的元素 能否找到和为i 的子序列
+dp[0] = true;
+for(int num : nums){
+    for(int j = target;j>=num;--j){//j只能倒序遍历，因为参考的是上一行和左边的值
+        dp[j] |= dp[j-num];
+    }
+}
+return dp[target];
 ```
-![alt text](4ce819ba82e4fa11cb6991c60cb0e29.png)
+![image-20240718184319959](readme.assets/image-20240718184319959.png)
 ## LCR 102 目标和
 设其中为正号的数的和为p，所有数的绝对值的和为s，那么其中取负号的数的和为s-p
 也就是p-(s-p) = target
@@ -3129,6 +3244,107 @@ public int subarraySum(int[] nums, int k) {
     return ans;
 }
 ```
+
+## HOT 100 完全平方数
+
+```java
+int[] dp = new int[n+1];//dp[i]表示数i最少能被几个完全平方数表示
+Arrays.fill(dp,Integer.MAX_VALUE);//难点在于对于某个数n，快速找到一个最大的完全平方数小于n
+dp[0]=0;
+for(int i=1;i*i<=n;i++){
+    for(int j=i*i;j<=n;j++){//解决方法就是从某个完全平方数开始遍历
+        dp[j] = Math.min(dp[j],dp[j-i*i]+1);
+    }
+}
+return dp[n];
+```
+
+## HOT 100 单词拆分
+
+```java
+public boolean wordBreak(String s, List<String> wordDict) {
+    Set<String> wordDictSet = new HashSet(wordDict);
+    boolean[] dp = new boolean[s.length()+1];//dp[i]表示0~i可以被字典中的单词表示
+    dp[0] = true;
+    for(int i=1;i<=s.length();i++){
+        for(int j=0;j<i;j++){
+            if(dp[j] && wordDictSet.contains(s.substring(j,i))){
+                dp[i] = true;//当d[j]可以被表示，并且j~i在字典中，那么d[i]可以被表示
+                break;
+            }
+        }
+    }
+    return dp[s.length()];
+}
+```
+
+## HOT 100 最长递增子序列LIS
+
+```java
+public int lengthOfLIS(int[] nums) {
+    int n = nums.length;
+    int[] dp = new int[n];//dp[i]表示以0~i为范围，最长递增子序列的长度
+    Arrays.fill(dp,1);
+    for(int i=0;i<n;i++){
+        for(int j=0;j<i;j++){//遍历0~i中所有的子序列，通过Math.max求一个最长的子序列长度，从i->0遍历也是可以的
+            if(nums[j]<nums[i]){//如果nums[i]>nums[j]，而i又在j的右边，那么dp[i]有可能是  dp[j]+1  或者  dp[i]本身（dp[i]本身可能是遍历0~i中出现的其他更长的子序列）
+                dp[i] = Math.max(dp[i],dp[j]+1);
+            }
+        }
+    }
+    return Arrays.stream(dp).max().getAsInt();
+}
+```
+
+## HOT 100 乘积最大子数组
+
+```java
+//说一下遇到0的情况，即nums[i]=0，imax = Math.max(imax*nums[i],nums[i])会等于0
+//若nums[i+1]不为0，那么imax = Math.max(0*nums[i+1],nums[i+1])，相当于从i+1重新开始，和从0开始是一样的
+public int maxProduct(int[] nums) {
+    int max = Integer.MIN_VALUE,imax = 1,imin=1;
+    for(int i=0;i<nums.length;i++){
+        if(nums[i]<0){
+            int tmp = imax;
+            imax = imin;
+            imin = tmp;
+        }
+        imax = Math.max(imax*nums[i],nums[i]);
+        imin = Math.min(imin*nums[i],nums[i]);
+
+        max = Math.max(max,imax);
+    }
+    return max;
+}
+
+//动态规划写法
+public int maxProduct(int[] nums) {
+    int[] dp_max = new int[nums.length+1];
+    int[] dp_min = new int[nums.length+1];
+    if(nums.length == 0) return 0;
+    int max = Integer.MIN_VALUE;
+    // 由于存在负数，所以需要维护两个数组
+    // dp_max[i] 指的是以第 i 个数结尾的 乘积最大 的连续子序列
+    // dp_min[i] 指的是以第 i 个数结尾的 乘积最小 的连续子序列
+    dp_max[0] = 1;
+    dp_min[0] = 1;
+    for (int i = 1;i <= nums.length;i++){
+        // 如果数组的数是负数，那么会导致 max 变成 min，min 变成 max
+        // 故需要交换dp 
+        if(nums[i-1] < 0){
+            int temp = dp_min[i-1];
+            dp_min[i-1] = dp_max[i-1];
+            dp_max[i-1] = temp;
+        }
+        dp_min[i] = Math.min(nums[i-1],dp_min[i-1]*nums[i-1]);
+        dp_max[i] = Math.max(nums[i-1],dp_max[i-1]*nums[i-1]);
+        max = Math.max(max,dp_max[i]);
+    }
+    return max;
+}
+```
+
+
 
 # 图论 
 
