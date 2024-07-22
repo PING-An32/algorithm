@@ -4879,7 +4879,7 @@ public static void quickSort(int[] array, int low, int high) {
 ```
 ## 堆排序
 ```java
-static in heapLen;
+static int heapLen;
 private static void swap(int[] arr,int i,int j){
     int tmp = arr[i];
     arr[i] = arr[j];
