@@ -4878,6 +4878,7 @@ public static void quickSort(int[] array, int low, int high) {
 }
 ```
 ## 堆排序
+
 ```java
 static int heapLen;
 private static void swap(int[] arr,int i,int j){
@@ -4916,3 +4917,123 @@ public static int[] heapSort(int[] arr){
     return arr;
 }
 ```
+
+# SQL
+
+## 连接
+
+### 1581 进店却未进行过交易的顾客
+
+```sql
+SELECT customer_id, count(customer_id) count_no_trans
+FROM Visits v
+LEFT JOIN transactions t 
+ON v.visit_id = t.visit_id
+WHERE transaction_id IS NULL
+GROUP BY customer_id;
+```
+
+![image.png](readme.assets/1677124508-YOVNQH-image.png)
+
+### 197 上升的温度（自连接）
+
+```sql
+SELECT b.Id
+FROM Weather a,Weather b
+WHERE a.Temperature < b.Temperature AND DATEDIFF(a.RecordDate,b.RecordDate) = -1;
+-- DATEDIFF('2007-12-31','2007-12-30');   # 1
+-- DATEDIFF('2007-12-30','2007-12-31');   # -1
+```
+
+![image-20240723203401560](readme.assets/image-20240723203401560.png)
+
+### 1661 每台机器的进程平均运行时间（自连接）
+
+```sql
+select a.machine_id, round(avg(b.timestamp - a.timestamp),3) processing_time
+from Activity a, Activity b
+where a.machine_id = b.machine_id and a.process_id = b.process_id and a.activity_type = 'start' and b.activity_type = 'end'
+group by a.machine_id
+```
+
+![image-20240723203344483](readme.assets/image-20240723203344483.png)
+
+```sql
+select a.machine_id,a.process_id, b.timestamp t1, a.timestamp t2
+from Activity a, Activity b
+where a.machine_id = b.machine_id and a.process_id = b.process_id and a.activity_type = 'start' and b.activity_type = 'end'
+group by a.machine_id,a.process_id
+-- 从下图看出，将t1-t2，再无视process_id，根据machine_id分组，即可通过avg求平均时间
+```
+
+![image-20240723203952808](readme.assets/image-20240723203952808.png)
+
+### 1280 学生们参加各科测试的次数(cross join)
+
+```sql
+Students table:
++------------+--------------+
+| student_id | student_name |
++------------+--------------+
+| 1          | Alice        |
+| 2          | Bob          |
+| 13         | John         |
+| 6          | Alex         |
++------------+--------------+
+Subjects table:
++--------------+
+| subject_name |
++--------------+
+| Math         |
+| Physics      |
+| Programming  |
++--------------+
+-- 执行cross join后
+select * 
+from Students s
+cross join
+Subjects sub
+-- 为什么需要cross join？ 
+-- 因为Examinations里只有学生参加了的考试，没参加的不会列出来，直接Join结果统计不到0
+```
+
+![image-20240723205245310](readme.assets/image-20240723205245310.png)
+
+```sql
+SELECT 
+    s.student_id, s.student_name, sub.subject_name, IFNULL(grouped.attended_exams, 0) AS attended_exams
+-- 为什么这里需要加ifnull？因为grouped临时表count(*)本身没有null，被连接之后才出现了null，而下面是先连接Examinations表之后才做的count(*)
+FROM 
+    Students s
+CROSS JOIN 
+    Subjects sub
+LEFT JOIN (
+    SELECT student_id, subject_name, COUNT(*) AS attended_exams
+    FROM Examinations
+    GROUP BY student_id, subject_name
+) grouped 
+ON s.student_id = grouped.student_id AND sub.subject_name = grouped.subject_name
+ORDER BY s.student_id, sub.subject_name;
+
+-- 或
+
+select stu.student_id,stu.student_name,sub.subject_name, count(e.subject_name) attended_exams
+-- 注意此处必须是e.subject_name，不能是sub.subject_name，不需要ifnull，因为count(null)返回0
+from Students stu
+cross join Subjects sub
+left join Examinations e
+on stu.student_id = e.student_id and sub.subject_name = e.subject_name
+group by stu.student_id, sub.subject_name
+order by stu.student_id, sub.subject_name
+
+select stu.student_id,stu.student_name,sub.subject_name
+from Students stu
+cross join Subjects sub
+left join Examinations e
+on stu.student_id = e.student_id and sub.subject_name = e.subject_name
+-- 其中stu为第一个表，e为第三个表，sub为第二个表，在第二次join时，可以用第一和第二个表。
+-- 上面代码的结果为下图，还需要绑定student_id和student_name，对subject_name进行分组
+-- 计算和，如果为NULL
+```
+
+![image-20240723211700236](readme.assets/image-20240723211700236.png)
