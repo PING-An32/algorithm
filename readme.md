@@ -1469,7 +1469,7 @@ public void swap(int[] a,int i,int j){
     a[j] = temp;
 }
 ```
-## LCR 147 最小栈
+## LCR 147 最小栈(HOT 100)
 要求取栈中最小元素的时间为O(1)
 push,pop,top时间也为O(1)
 可以用一个辅助栈
@@ -1488,7 +1488,7 @@ public void push(int x) {
 }
 
 public void pop() {
-    if(A.pop().equals(B.peek()))
+    if(A.pop().equals(B.peek()))//一定要加equals，因为是包装类的比较
         B.pop();
 }
 
@@ -1634,8 +1634,54 @@ public int remove() {
     return goods.poll();
 }
 ```
+## HOT 100 字符串解码
+
+```java
+public String decodeString(String s) {
+    Deque<Integer> stack_num = new ArrayDeque();
+    Deque<String> stack_res = new ArrayDeque();
+    StringBuilder res = new StringBuilder();
+    int num=0;
+    for(char ch:s.toCharArray()){
+        if(ch<='9' && ch>='0'){
+            num = num*10 + ch - '0';
+        }else if(ch == '['){
+            stack_num.push(num);
+            stack_res.push(sb.toString());
+            num=0;
+            res = new StringBuilder();//新建一个准备记录[]包起来的字符串
+        }else if(ch == ']'){//每次遇到']'，将栈中弹出一组<Integer,String>，并重构res
+            StringBuilder tmp = new StringBuilder();
+            int cur_num = stack_num.pop();
+            for(int i=0;i<cur_num;i++)tmp.append(res);//这行的res是["str"]括号里的string，需要重复cur_num次
+            res = new StringBuilder(stack_res.pop()+tmp);
+        }else{
+            res.append(ch);
+        }
+    }
+    return res.toString();
+}
+```
+
 # 二分查找(满足单调递增或递减特性)
+
+### 二分模板
+
+```java
+int left = 0, right = arr.length-1;
+while(left<=right){
+    int mid = left+(right-left)/2;
+    if(arr[mid]>target){
+        right = mid-1;
+    }else{
+        left = mid+1;
+    }
+}
+return left;
+```
+
 ## LCR 070 有序数组中的单一元素
+
 给定一个只包含整数的有序数组 nums ，每个元素都会出现两次，唯有一个数只会出现一次，请找出这个唯一的数字
 nums = [1,1,2,3,3,4,4,8,8]
 可以用异或解决，但是时间复杂度为O(n)
@@ -1748,6 +1794,50 @@ public int longestValidParentheses(String s) {
 ```
 
 ![image-20240718194148508](readme.assets/image-20240718194148508.png)
+
+## HOT 100 寻找两个正序数组的中位数
+
+![image-20240806110307641](readme.assets/image-20240806110307641.png)
+
+需要满足分割线，左边所有元素的大小 小于 右边所有元素的大小
+
+也就是说，**上左 小于 下右，上右 大于 下左**（上左小于上右，下左小于下右已经由题目给出），同时**分割线左元素个数 等于 分割线右元素个数**（规定左可以多1）
+
+```java
+public double findMedianSortedArrays(int[] arr1, int[] arr2) {
+    int m = arr1.length;
+    int n = arr2.length;
+    if (m > n) { 
+        return findMedianSortedArrays(arr2,arr1); // 保证 m <= n
+    }
+    int iMin = 0, iMax = m;
+    while (iMin <= iMax) {
+        int i = (iMin + iMax) / 2;//用i将arr1分为左右两部分，初始设为arr1的中间
+        int j = (m + n + 1) / 2 - i;//用j将arr2分为左右两部分，初始设为arr2的中间（总数/2再减去i左边，即为j左边的元素数），即j的大小由 i 和 元素总个数决定
+        if (j != 0 && i != m && arr2[j-1] > arr1[i]){ // i 需要增大
+            iMin = i + 1; 
+        }
+        else if (i != 0 && j != n && arr1[i-1] > arr2[j]) { // i 需要减小
+            iMax = i - 1; 
+        }
+        else { // 达到要求，并且将边界条件列出来单独考虑
+            int maxLeft = 0;
+            if (i == 0) { maxLeft = arr2[j-1]; }
+            else if (j == 0) { maxLeft = arr1[i-1]; }
+            else { maxLeft = Math.max(arr1[i-1], arr2[j-1]); }
+            if ( (m + n) % 2 == 1 ) { return maxLeft; } // 奇数的话不需要考虑右半部分
+
+            int minRight = 0;
+            if (i == m) { minRight = arr2[j]; }
+            else if (j == n) { minRight = arr1[i]; }
+            else { minRight = Math.min(arr2[j], arr1[i]); }
+
+            return (maxLeft + minRight) / 2.0; //如果是偶数的话返回结果
+        }
+    }
+    return 0.0;
+}
+```
 
 # 其他
 
